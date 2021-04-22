@@ -1,0 +1,26 @@
+{
+	"cmake.configureOnOpen": false,
+	"files.associations": {
+		"*.StormLayout": "sc2layout",
+		"*.stormlayout": "sc2layout",
+		"release": "lua",
+		"stlrel": "lua",
+		"linkstl": "lua",
+		"atomic": "cpp",
+		"cstdint": "cpp",
+		"random": "cpp",
+		"*.tcc": "cpp",
+		"*.ipp": "cpp",
+		"string": "cpp",
+		"vector": "cpp",
+		"fstream": "cpp",
+		"limits": "cpp",
+		"sstream": "cpp",
+		"utility": "cpp",
+		"esp_task_wdt.h": "c",
+		"timer.h": "c",
+		"condition_variable": "c",
+		"future": "c",
+		"mutex": "c"
+	}
+}
