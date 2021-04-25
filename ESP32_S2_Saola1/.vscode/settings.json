@@ -21,6 +21,9 @@
 		"timer.h": "c",
 		"condition_variable": "c",
 		"future": "c",
-		"mutex": "c"
+		"mutex": "c",
+		"thread": "cpp",
+		"algorithm": "cpp",
+		"gpio.h": "c"
 	}
 }
