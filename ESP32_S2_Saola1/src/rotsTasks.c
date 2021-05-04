@@ -18,49 +18,65 @@ inline void vTaskLEDFade( void * pvParameters)
 	// unsigned amountChange = trunc(xGetDutyResolutionMax()/ticInterval);
 	bool firstRun = true;
 
-	while(1){
+	while(1) {
 		// blocks and waits for a notification. See peram details for more behavior info.
 		// xTaskNotifyWait(0, ULONG_MAX, NULL, portMAX_DELAY);
-
 		ulTaskNotifyTake(0, ULONG_MAX);
 
-		// print some display info.
+		// print some stuff for debugging.
 		printf("%s%i\n", "Duty Value: ", (int)LEDC_CHANNEL_0_DUTY);
 
-		if (firstRun){
+		if (firstRun) {
 			ticsElapsed = esp_timer_get_time();
 			firstRun = false;
 		}
-
-		// we can't neccessarily initialize outside of while loop since we want the time since it last unblocked.
-		// ticsLastLoop = esp_timer_get_time(); 
 		// Find the time delta between the last time this task got CPU usage.
 		ticsElapsed += esp_timer_get_time() - ticsElapsed;
-		// printf("%s%llu\n", "ticsElapsed: ", ticsElapsed);
-
-		esp_task_wdt_reset();
 
 		if (ticsElapsed >= ticInterval) {
-			
+#ifdef BTN_0_LED_DRIVER_N
 			// This prevents unsigned from wrapping around to uint max
 			if ((int)LEDC_CHANNEL_0_DUTY > 0) {
 				LEDC_CHANNEL_0_DUTY--;
 				ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, (uint32_t)LEDC_CHANNEL_0_DUTY);
 			}
-			
-			if ((int)LEDC_CHANNEL_0_DUTY <= 0)
-			{
+#endif
+#ifdef BTN_0_LED_DRIVER_P
+			// This prevents unsigned from wrapping around to uint max
+			if ((int)LEDC_CHANNEL_0_DUTY <= LEDC_CHANNEL_0_DUTY_MAX) {
+				LEDC_CHANNEL_0_DUTY++;
+				ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, (uint32_t)LEDC_CHANNEL_0_DUTY);
+			}
+#endif
+#ifdef BTN_0_LED_DRIVER_N
+			if ((int)LEDC_CHANNEL_0_DUTY <= 0) {
 				LEDC_CHANNEL_0_DUTY = 0;
 				ticsElapsed = 0;
 				firstRun = true;
 				// Tell task to block task when fade is complete.
 				xTaskNotify(xHandleLEDFade, 0, eSetValueWithOverwrite);
 			}
-			else	// Continue while loop
+			else {	// Continue while loop
 				xTaskNotify(xHandleLEDFade, 1, eSetValueWithOverwrite);
+				taskYIELD();
 			}
+#endif
+#ifdef BTN_0_LED_DRIVER_P
+			if ((int)LEDC_CHANNEL_0_DUTY >= LEDC_CHANNEL_0_DUTY_MAX) {
+				LEDC_CHANNEL_0_DUTY = LEDC_CHANNEL_0_DUTY_MAX;
+				ticsElapsed = 0;
+				firstRun = true;
+				// Tell task to block task when fade is complete.
+				xTaskNotify(xHandleLEDFade, 0, eSetValueWithOverwrite);
+			}
+			else {	// Continue while loop
+				xTaskNotify(xHandleLEDFade, 1, eSetValueWithOverwrite);
+				taskYIELD();
+			}
+#endif
+		}
 	}
-	
+
 }
 
 inline void vInitTaskLEDFade( void )

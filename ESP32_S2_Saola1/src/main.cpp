@@ -24,9 +24,8 @@ extern "C" {
 void app_main(void) {
 	// Call all ESP-IDF initializers first.
 	vInitGPIO();
-	vInitTimers();
+	vInitTimer_0();
 	vInitLEDC();
-
 
 	// Call all FreeRTOS initializers after.
 	vInitTaskLEDFade();

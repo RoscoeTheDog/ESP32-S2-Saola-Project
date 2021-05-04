@@ -2,6 +2,7 @@
 #define CONFIG_SMARTBLINDS_H
 
 #include <driver/gpio.h>
+#include <driverTypes.h>
 
 #define STEP_PIN GPIO_NUM_1
 #define STEP_PIN_SEL GPIO_SEL_1
@@ -12,14 +13,18 @@
 #define EN_PIN GPIO_NUM_0
 #define EN_PIN_SEL GPIO_SEL_0
 
-#define BTN_0_PIN GPIO_NUM_5
-#define BTN_0_PIN_SEL GPIO_SEL_5
+#define BTN_0_PIN GPIO_NUM_21
+#define BTN_0_PIN_SEL GPIO_SEL_21
 
-#define BTN_0_LED_PIN GPIO_NUM_8
-#define BTN_0_LED_PIN_SEL GPIO_SEL_8
+#define BTN_0_LED_PIN GPIO_NUM_20
+#define BTN_0_LED_PIN_SEL GPIO_SEL_20
 
-#define BTN_1_PIN GPIO_NUM_21
-#define BTN_1_PIN_SEL GPIO_SEL_21
+// if using a transistor or mosfet to switch a higher power source, uncomment the appropriate method.
+// #define BTN_0_LED_DRIVER_P
+#define BTN_0_LED_DRIVER_N
+
+#define BTN_1_PIN GPIO_NUM_8
+#define BTN_1_PIN_SEL GPIO_SEL_8
 
 inline void vInitGPIO(){ 
 	// Configure all GPIO here.
@@ -55,8 +60,14 @@ inline void vInitGPIO(){
 	gpio_config_t BTN_0_LED_CONF;
 	BTN_0_LED_CONF.pin_bit_mask = BTN_0_LED_PIN_SEL;
 	BTN_0_LED_CONF.mode = GPIO_MODE_OUTPUT;
+#ifdef BTN_0_LED_DRIVER_P
+	BTN_0_LED_CONF.pull_up_en = GPIO_PULLUP_ENABLE;
+	BTN_0_LED_CONF.pull_down_en = GPIO_PULLDOWN_DISABLE;
+#endif
+#ifdef BTN_0_LED_DRIVER_N
 	BTN_0_LED_CONF.pull_up_en = GPIO_PULLUP_DISABLE;
 	BTN_0_LED_CONF.pull_down_en = GPIO_PULLDOWN_ENABLE;
+#endif
 	BTN_0_LED_CONF.intr_type = GPIO_INTR_DISABLE;
 
 	gpio_config_t BTN_1_CONF;
