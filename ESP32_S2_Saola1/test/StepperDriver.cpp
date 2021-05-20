@@ -14,14 +14,41 @@
 
 #include "StepperDriver.hpp"
 
+#define HIGH 1
+#define LOW 0
+
 /*
  * Basic connection: only DIR, STEP are connected.
  * Microstepping controls should be hardwired.
  */
-// BasicStepperDriver::BasicStepperDriver(short steps, gpio_num_t dir_pin, uint64_t dir_pin_mask, gpio_num_t step_pin, uint64_t step_pin_mask)
-// :BasicStepperDriver(steps, dir_pin, dir_pin_mask, step_pin, step_pin_mask)
-// {
-// }
+TaskHandle_t xHandleTaskStepperMove = NULL;
+TimerHandle_t xTimerHandler0 = NULL;
+
+inline void vInitTaskStepperMove(void * args) {
+    // Init the task, passing in the callback, a name, stack size, callback params, priority and finally-- the handler itself.
+	xTaskCreate(vTaskStepperMove, "LEDFade", 2048, NULL, 25, &xHandleTaskStepperMove);
+	// assert the task to ensure it was created succesfully. it will be thrown in console otherwise.
+	configASSERT(xHandleTaskStepperMove);
+}
+
+void vPrintTest(void * args) {
+    printf("%s\n", "Hello World!");
+}
+
+inline void vInitTaskTimer0(void * args) {
+    xTimerHandler0 = xTimerCreate("xTimerTask", pdMS_TO_TICKS(1000), pdTRUE, (void*)0, vPrintTest);
+    xTimerStart(xTimerHandler0, 0);
+}
+
+inline void vTaskStepperMoveStep(void * args) {
+        
+    while(1) {
+		// blocks and waits for a notification. See peram details for more behavior info.
+		// xTaskNotifyWait(0, ULONG_MAX, NULL, portMAX_DELAY);
+		ulTaskNotifyTake(0, ULONG_MAX); 
+    }
+
+}
 
 BasicStepperDriver::BasicStepperDriver(short steps, gpio_num_t dir_pin, uint64_t dir_pin_mask, gpio_num_t step_pin, uint64_t step_pin_mask, gpio_num_t enable_pin, uint64_t enable_pin_mask)
 :motor_steps(steps), dir_pin(dir_pin), dir_pin_mask(dir_pin_mask), step_pin(step_pin), step_pin_mask(step_pin_mask), enable_pin(enable_pin), enable_pin_mask(enable_pin_mask)

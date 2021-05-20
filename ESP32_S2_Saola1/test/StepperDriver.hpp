@@ -7,10 +7,12 @@
 #include <driver/gpio.h>
 #include <algorithm>
 #include <cmath>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include <freertos/timers.h>
 
 #define HIGH 1
 #define LOW 0
-
 // gpio_num_t IS_CONNECTED(pin) (pin != PIN_UNCONNECTED)
 
 /*
@@ -21,6 +23,16 @@
 
 // don't call yield if we have a wait shorter than this
 #define MIN_YIELD_MICROS 50
+
+// Create all handlers for task function callbacks. It is a pointer, so we can init it to null.
+extern TaskHandle_t xHandleTaskStepperMove;
+extern TimerHandle_t xTimerHandler0;
+
+extern void vInitTaskTimer0(void * args);
+
+extern void vInitTaskStepperMove(void * args);
+
+extern void vTaskStepperMove(void * args);
 
 class BasicStepperDriver {
 // used internally by the library to mark unconnected pins

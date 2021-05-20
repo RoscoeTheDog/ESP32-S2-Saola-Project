@@ -1,12 +1,41 @@
 #include <configTimers.h>
 
+timer_config_t config_timer_0;
+timer_config_t config_timer_1;
+
+inline void vUpdateLEDFade() {
+
+#ifdef BTN_0_LED_DRIVER_N
+	LEDC_CHANNEL_0_DUTY--;
+#endif
+
+#ifdef BTN_0_LED_DRIVER_P
+	LEDC_CHANNEL_0_DUTY++;
+#endif
+	ledc_set_duty_with_hpoint(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, LEDC_CHANNEL_0_DUTY, 0);
+}
+
+inline void vSetLEDFadePeriod(int ms) {
+
+	int timer_0_frequency = APB_CLK_FREQ/config_timer_0.divider;
+	int period_ms = timer_0_frequency/1000;
+	int target_period_us = ms * period_ms;
+	uint64_t alarm_value = target_period_us/LEDC_CHANNEL_0_DUTY_MAX;
+
+	// Pause and reset the timer before setting the alarm.
+	printf("%s %lld\n", "FADE ALARM(64) INTERVAL: ", alarm_value);
+	timer_pause(TIMER_GROUP_0, TIMER_0);
+	timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0);
+	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, alarm_value);
+	timer_start(TIMER_GROUP_0, TIMER_0);
+}
+
 inline void vInitTimer_0() {
 	// Note: do not use C designated initializers as they are not friendly with C++ syntax.
-	timer_config_t config_timer_0;
 	config_timer_0.clk_src = TIMER_SRC_CLK_APB;
-	config_timer_0.divider = 65536;					 // gives the slowest possible frequency: 1222hz frequency (aprox 1ms frequency)
+	config_timer_0.divider = 2;					 // 40hz
 	config_timer_0.auto_reload = TIMER_AUTORELOAD_EN;
-	config_timer_0.intr_type = TIMER_INTR_LEVEL;
+	config_timer_0.intr_type = TIMER_INTR_NONE;
 	config_timer_0.counter_dir = TIMER_COUNT_UP;
 	config_timer_0.alarm_en = TIMER_ALARM_EN;
 
@@ -15,12 +44,12 @@ inline void vInitTimer_0() {
 
 	// alarm value is number of cycle periods the timer has elapsed.
 	// example: if set at 5khz speed, then 5,000hz/5 tics = 1,000 us/period or 0.001 second (1ms)
-	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 2);
+	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000);
 	// Attach a callback (isr)
-	timer_isr_callback_add(TIMER_GROUP_0, TIMER_0, xISR_button_0, NULL, ESP_INTR_FLAG_LEVEL1);
+	timer_isr_callback_add(TIMER_GROUP_0, TIMER_0, xISR_button_0, NULL, ESP_INTR_FLAG_IRAM);
 
 	timer_start(TIMER_GROUP_0, TIMER_0);
-}
+} 
 
 inline void vInitTimer_1() {
 	// Note: do not use C designated initializers as they are not friendly with C++ syntax.

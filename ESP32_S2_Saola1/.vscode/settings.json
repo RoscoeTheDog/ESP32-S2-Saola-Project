@@ -82,6 +82,10 @@
 		"task.h": "c",
 		"esp_int_wdt.h": "c",
 		"esp_pm.h": "c",
-		"pm.h": "c"
+		"pm.h": "c",
+		"configtimers.h": "c",
+		"stepperdriver.h": "c",
+		"math.h": "c",
+		"esp_timer.h": "c"
 	}
 }

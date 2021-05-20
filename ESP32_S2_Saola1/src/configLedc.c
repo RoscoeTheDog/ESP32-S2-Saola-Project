@@ -1,12 +1,12 @@
 #include <configLedc.h>
 
-volatile int LEDC_CHANNEL_0_DUTY = 0;
+int volatile LEDC_CHANNEL_0_DUTY = 0;
 
 inline int xGetDutyResolutionMax() {
-	return (pow(2, (unsigned)LEDC_CHANNEL_0_DUTY_BITS ) - 1);
+	return (pow(2, LEDC_CHANNEL_0_DUTY_BITS) - 1);
 }
 
-inline void vInitLEDC( void ) {
+inline void vInitLEDC_0( void ) {
 	// config ledc peripherials and channels here.
 	// Note: when needing to reference a channel, use the appropriate C macros instead of the direct objects.
 	ledc_timer_config_t ledc_timer_conf_0;
@@ -28,4 +28,11 @@ inline void vInitLEDC( void ) {
 	// pass configs to config initializers.
 	ledc_timer_config(&ledc_timer_conf_0);
 	ledc_channel_config(&ledc_channel_conf_0);
+
+	printf("%s %i\n", "LEDC FREQUENCY: ", LEDC_TIMER_0_FREQUENCY);
+	printf("%s %i\n", "LEDC BIT RESOLUTION: ", LEDC_CHANNEL_0_DUTY_BITS);
+	printf("%s %i\n", "LEDC BIT INTEGER MAX: ", LEDC_CHANNEL_0_DUTY_MAX);
+
+	// ledc_set_duty_with_hpoint(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 2047, 0);
+	// ledc_set_duty_and_update
 }

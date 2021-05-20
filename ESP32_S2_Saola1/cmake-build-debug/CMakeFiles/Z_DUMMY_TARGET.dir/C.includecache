@@ -1,0 +1,36 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/configGpio.c
+configGpio.h
+-
+
+C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/configLedc.c
+configLedc.h
+-
+
+C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/configTimers.c
+configTimers.h
+-
+
+C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/driverTypes.c
+driverTypes.h
+-
+
+C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/espInterrupts.c
+espInterrupts.h
+-
+configGpio.h
+-
+
+C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/rotsTasks.c
+rtosTasks.h
+-
+esp_int_wdt.h
+-
+
