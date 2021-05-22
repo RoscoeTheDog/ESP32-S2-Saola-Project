@@ -75,18 +75,18 @@ include CMakeFiles/Z_DUMMY_TARGET.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/Z_DUMMY_TARGET.dir/flags.make
 
-CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.cpp.obj: CMakeFiles/Z_DUMMY_TARGET.dir/flags.make
-CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.cpp.obj: ../lib/StepperDriver/StepperDriver.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building CXX object CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.cpp.obj"
-	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles\Z_DUMMY_TARGET.dir\lib\StepperDriver\StepperDriver.cpp.obj -c C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\lib\StepperDriver\StepperDriver.cpp
+CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.c.obj: CMakeFiles/Z_DUMMY_TARGET.dir/flags.make
+CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.c.obj: ../lib/StepperDriver/StepperDriver.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.c.obj"
+	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\Z_DUMMY_TARGET.dir\lib\StepperDriver\StepperDriver.c.obj -c C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\lib\StepperDriver\StepperDriver.c
 
-CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.cpp.i"
-	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\lib\StepperDriver\StepperDriver.cpp > CMakeFiles\Z_DUMMY_TARGET.dir\lib\StepperDriver\StepperDriver.cpp.i
+CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.c.i"
+	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\lib\StepperDriver\StepperDriver.c > CMakeFiles\Z_DUMMY_TARGET.dir\lib\StepperDriver\StepperDriver.c.i
 
-CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.cpp.s"
-	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\lib\StepperDriver\StepperDriver.cpp -o CMakeFiles\Z_DUMMY_TARGET.dir\lib\StepperDriver\StepperDriver.cpp.s
+CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.c.s"
+	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\lib\StepperDriver\StepperDriver.c -o CMakeFiles\Z_DUMMY_TARGET.dir\lib\StepperDriver\StepperDriver.c.s
 
 CMakeFiles/Z_DUMMY_TARGET.dir/src/configGpio.c.obj: CMakeFiles/Z_DUMMY_TARGET.dir/flags.make
 CMakeFiles/Z_DUMMY_TARGET.dir/src/configGpio.c.obj: ../src/configGpio.c
@@ -114,9 +114,22 @@ CMakeFiles/Z_DUMMY_TARGET.dir/src/configLedc.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/Z_DUMMY_TARGET.dir/src/configLedc.c.s"
 	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\src\configLedc.c -o CMakeFiles\Z_DUMMY_TARGET.dir\src\configLedc.c.s
 
+CMakeFiles/Z_DUMMY_TARGET.dir/src/configSteppers.c.obj: CMakeFiles/Z_DUMMY_TARGET.dir/flags.make
+CMakeFiles/Z_DUMMY_TARGET.dir/src/configSteppers.c.obj: ../src/configSteppers.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/Z_DUMMY_TARGET.dir/src/configSteppers.c.obj"
+	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\Z_DUMMY_TARGET.dir\src\configSteppers.c.obj -c C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\src\configSteppers.c
+
+CMakeFiles/Z_DUMMY_TARGET.dir/src/configSteppers.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/Z_DUMMY_TARGET.dir/src/configSteppers.c.i"
+	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\src\configSteppers.c > CMakeFiles\Z_DUMMY_TARGET.dir\src\configSteppers.c.i
+
+CMakeFiles/Z_DUMMY_TARGET.dir/src/configSteppers.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/Z_DUMMY_TARGET.dir/src/configSteppers.c.s"
+	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\src\configSteppers.c -o CMakeFiles\Z_DUMMY_TARGET.dir\src\configSteppers.c.s
+
 CMakeFiles/Z_DUMMY_TARGET.dir/src/configTimers.c.obj: CMakeFiles/Z_DUMMY_TARGET.dir/flags.make
 CMakeFiles/Z_DUMMY_TARGET.dir/src/configTimers.c.obj: ../src/configTimers.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building C object CMakeFiles/Z_DUMMY_TARGET.dir/src/configTimers.c.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/Z_DUMMY_TARGET.dir/src/configTimers.c.obj"
 	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\Z_DUMMY_TARGET.dir\src\configTimers.c.obj -c C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\src\configTimers.c
 
 CMakeFiles/Z_DUMMY_TARGET.dir/src/configTimers.c.i: cmake_force
@@ -129,7 +142,7 @@ CMakeFiles/Z_DUMMY_TARGET.dir/src/configTimers.c.s: cmake_force
 
 CMakeFiles/Z_DUMMY_TARGET.dir/src/driverTypes.c.obj: CMakeFiles/Z_DUMMY_TARGET.dir/flags.make
 CMakeFiles/Z_DUMMY_TARGET.dir/src/driverTypes.c.obj: ../src/driverTypes.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building C object CMakeFiles/Z_DUMMY_TARGET.dir/src/driverTypes.c.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building C object CMakeFiles/Z_DUMMY_TARGET.dir/src/driverTypes.c.obj"
 	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\Z_DUMMY_TARGET.dir\src\driverTypes.c.obj -c C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\src\driverTypes.c
 
 CMakeFiles/Z_DUMMY_TARGET.dir/src/driverTypes.c.i: cmake_force
@@ -142,7 +155,7 @@ CMakeFiles/Z_DUMMY_TARGET.dir/src/driverTypes.c.s: cmake_force
 
 CMakeFiles/Z_DUMMY_TARGET.dir/src/espInterrupts.c.obj: CMakeFiles/Z_DUMMY_TARGET.dir/flags.make
 CMakeFiles/Z_DUMMY_TARGET.dir/src/espInterrupts.c.obj: ../src/espInterrupts.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building C object CMakeFiles/Z_DUMMY_TARGET.dir/src/espInterrupts.c.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building C object CMakeFiles/Z_DUMMY_TARGET.dir/src/espInterrupts.c.obj"
 	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\Z_DUMMY_TARGET.dir\src\espInterrupts.c.obj -c C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\src\espInterrupts.c
 
 CMakeFiles/Z_DUMMY_TARGET.dir/src/espInterrupts.c.i: cmake_force
@@ -155,7 +168,7 @@ CMakeFiles/Z_DUMMY_TARGET.dir/src/espInterrupts.c.s: cmake_force
 
 CMakeFiles/Z_DUMMY_TARGET.dir/src/main.cpp.obj: CMakeFiles/Z_DUMMY_TARGET.dir/flags.make
 CMakeFiles/Z_DUMMY_TARGET.dir/src/main.cpp.obj: ../src/main.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/Z_DUMMY_TARGET.dir/src/main.cpp.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/Z_DUMMY_TARGET.dir/src/main.cpp.obj"
 	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-g++.exe $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles\Z_DUMMY_TARGET.dir\src\main.cpp.obj -c C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\src\main.cpp
 
 CMakeFiles/Z_DUMMY_TARGET.dir/src/main.cpp.i: cmake_force
@@ -168,7 +181,7 @@ CMakeFiles/Z_DUMMY_TARGET.dir/src/main.cpp.s: cmake_force
 
 CMakeFiles/Z_DUMMY_TARGET.dir/src/rotsTasks.c.obj: CMakeFiles/Z_DUMMY_TARGET.dir/flags.make
 CMakeFiles/Z_DUMMY_TARGET.dir/src/rotsTasks.c.obj: ../src/rotsTasks.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building C object CMakeFiles/Z_DUMMY_TARGET.dir/src/rotsTasks.c.obj"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building C object CMakeFiles/Z_DUMMY_TARGET.dir/src/rotsTasks.c.obj"
 	C:\Users\admin\.platformio\packages\toolchain-xtensa32s2\bin\xtensa-esp32s2-elf-gcc.exe $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles\Z_DUMMY_TARGET.dir\src\rotsTasks.c.obj -c C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\src\rotsTasks.c
 
 CMakeFiles/Z_DUMMY_TARGET.dir/src/rotsTasks.c.i: cmake_force
@@ -181,9 +194,10 @@ CMakeFiles/Z_DUMMY_TARGET.dir/src/rotsTasks.c.s: cmake_force
 
 # Object files for target Z_DUMMY_TARGET
 Z_DUMMY_TARGET_OBJECTS = \
-"CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.cpp.obj" \
+"CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.c.obj" \
 "CMakeFiles/Z_DUMMY_TARGET.dir/src/configGpio.c.obj" \
 "CMakeFiles/Z_DUMMY_TARGET.dir/src/configLedc.c.obj" \
+"CMakeFiles/Z_DUMMY_TARGET.dir/src/configSteppers.c.obj" \
 "CMakeFiles/Z_DUMMY_TARGET.dir/src/configTimers.c.obj" \
 "CMakeFiles/Z_DUMMY_TARGET.dir/src/driverTypes.c.obj" \
 "CMakeFiles/Z_DUMMY_TARGET.dir/src/espInterrupts.c.obj" \
@@ -193,9 +207,10 @@ Z_DUMMY_TARGET_OBJECTS = \
 # External object files for target Z_DUMMY_TARGET
 Z_DUMMY_TARGET_EXTERNAL_OBJECTS =
 
-Z_DUMMY_TARGET: CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.cpp.obj
+Z_DUMMY_TARGET: CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.c.obj
 Z_DUMMY_TARGET: CMakeFiles/Z_DUMMY_TARGET.dir/src/configGpio.c.obj
 Z_DUMMY_TARGET: CMakeFiles/Z_DUMMY_TARGET.dir/src/configLedc.c.obj
+Z_DUMMY_TARGET: CMakeFiles/Z_DUMMY_TARGET.dir/src/configSteppers.c.obj
 Z_DUMMY_TARGET: CMakeFiles/Z_DUMMY_TARGET.dir/src/configTimers.c.obj
 Z_DUMMY_TARGET: CMakeFiles/Z_DUMMY_TARGET.dir/src/driverTypes.c.obj
 Z_DUMMY_TARGET: CMakeFiles/Z_DUMMY_TARGET.dir/src/espInterrupts.c.obj
@@ -203,7 +218,7 @@ Z_DUMMY_TARGET: CMakeFiles/Z_DUMMY_TARGET.dir/src/main.cpp.obj
 Z_DUMMY_TARGET: CMakeFiles/Z_DUMMY_TARGET.dir/src/rotsTasks.c.obj
 Z_DUMMY_TARGET: CMakeFiles/Z_DUMMY_TARGET.dir/build.make
 Z_DUMMY_TARGET: CMakeFiles/Z_DUMMY_TARGET.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX executable Z_DUMMY_TARGET"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=C:\Users\admin\Documents\Github\C++\ESP32-S2-Saola\ESP32_S2_Saola1\cmake-build-debug\CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Linking CXX executable Z_DUMMY_TARGET"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles\Z_DUMMY_TARGET.dir\link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

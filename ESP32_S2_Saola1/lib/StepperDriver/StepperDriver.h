@@ -53,6 +53,8 @@ typedef struct StepperHandler_t {
 	int wakeup_time;
 } StepperHandler_t;
 
+extern long getStepPulse(long steps, short microsteps, float rpm);
+
 extern void startMove(StepperHandler_t *stepper_handler, long steps, long time);
 
 extern void delayMicros(unsigned long delay_us, unsigned long start_us);

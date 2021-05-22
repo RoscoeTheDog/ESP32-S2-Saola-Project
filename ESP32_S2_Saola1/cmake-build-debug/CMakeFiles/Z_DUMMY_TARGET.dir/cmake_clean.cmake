@@ -1,7 +1,8 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.cpp.obj"
+  "CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.c.obj"
   "CMakeFiles/Z_DUMMY_TARGET.dir/src/configGpio.c.obj"
   "CMakeFiles/Z_DUMMY_TARGET.dir/src/configLedc.c.obj"
+  "CMakeFiles/Z_DUMMY_TARGET.dir/src/configSteppers.c.obj"
   "CMakeFiles/Z_DUMMY_TARGET.dir/src/configTimers.c.obj"
   "CMakeFiles/Z_DUMMY_TARGET.dir/src/driverTypes.c.obj"
   "CMakeFiles/Z_DUMMY_TARGET.dir/src/espInterrupts.c.obj"

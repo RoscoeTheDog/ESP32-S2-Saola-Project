@@ -5,7 +5,7 @@ StepperHandler_t stepperMotor_1;
 inline void vInitCurtainStepper() {
 
 	StepperConfig_t stepperConfig;
-	stepperConfig.step_pin = STEP_PIN;
+	stepperConfig.step_pin = 1;
 	stepperConfig.direction_pin = DIR_PIN;
 	stepperConfig.enable_pin = EN_PIN;
 	stepperConfig.enable_active_state = 1;

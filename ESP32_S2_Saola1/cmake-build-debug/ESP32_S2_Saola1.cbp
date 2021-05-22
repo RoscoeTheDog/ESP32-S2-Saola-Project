@@ -100,10 +100,10 @@
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/lib/StepperDriver/StepperDriver.cpp">
+		<Unit filename="C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/lib/StepperDriver/StepperDriver.c">
 			<Option target="Z_DUMMY_TARGET"/>
 		</Unit>
-		<Unit filename="C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/lib/StepperDriver/StepperDriver.hpp">
+		<Unit filename="C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/lib/StepperDriver/StepperDriver.h">
 			<Option target="Z_DUMMY_TARGET"/>
 		</Unit>
 		<Unit filename="C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/CMakeLists.txt">
@@ -113,6 +113,9 @@
 			<Option target="Z_DUMMY_TARGET"/>
 		</Unit>
 		<Unit filename="C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/configLedc.c">
+			<Option target="Z_DUMMY_TARGET"/>
+		</Unit>
+		<Unit filename="C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/configSteppers.c">
 			<Option target="Z_DUMMY_TARGET"/>
 		</Unit>
 		<Unit filename="C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/configTimers.c">

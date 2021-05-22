@@ -30,6 +30,8 @@ void app_main(void) {
 	// vInitTimer_0();
 	// vInitTaskLEDFade();
 	vInitCurtainStepper();
+	// printf("%i\n", stepperMotor_1.configuration->step_pin);
+	// printf("%i\n", stepperMotor_1.configuration->step_pin);
 	rotate(&stepperMotor_1, 360);
 	// vInitTaskCurtainStepper();
 

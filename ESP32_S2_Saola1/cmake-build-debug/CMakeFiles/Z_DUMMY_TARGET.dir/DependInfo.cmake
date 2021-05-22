@@ -5,8 +5,10 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
+  "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/lib/StepperDriver/StepperDriver.c" "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/cmake-build-debug/CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.c.obj"
   "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/configGpio.c" "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/cmake-build-debug/CMakeFiles/Z_DUMMY_TARGET.dir/src/configGpio.c.obj"
   "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/configLedc.c" "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/cmake-build-debug/CMakeFiles/Z_DUMMY_TARGET.dir/src/configLedc.c.obj"
+  "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/configSteppers.c" "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/cmake-build-debug/CMakeFiles/Z_DUMMY_TARGET.dir/src/configSteppers.c.obj"
   "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/configTimers.c" "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/cmake-build-debug/CMakeFiles/Z_DUMMY_TARGET.dir/src/configTimers.c.obj"
   "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/driverTypes.c" "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/cmake-build-debug/CMakeFiles/Z_DUMMY_TARGET.dir/src/driverTypes.c.obj"
   "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/espInterrupts.c" "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/cmake-build-debug/CMakeFiles/Z_DUMMY_TARGET.dir/src/espInterrupts.c.obj"
@@ -18,7 +20,6 @@ set(CMAKE_C_COMPILER_ID "GNU")
 set(CMAKE_C_TARGET_INCLUDE_PATH
   )
 set(CMAKE_DEPENDS_CHECK_CXX
-  "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/lib/StepperDriver/StepperDriver.cpp" "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/cmake-build-debug/CMakeFiles/Z_DUMMY_TARGET.dir/lib/StepperDriver/StepperDriver.cpp.obj"
   "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/src/main.cpp" "C:/Users/admin/Documents/Github/C++/ESP32-S2-Saola/ESP32_S2_Saola1/cmake-build-debug/CMakeFiles/Z_DUMMY_TARGET.dir/src/main.cpp.obj"
   )
 set(CMAKE_CXX_COMPILER_ID "GNU")
