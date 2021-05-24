@@ -23,7 +23,6 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 	updateButtonsState();
 
 	if (BTN_0_PIN_STATE){
-
 		// TODO: test this code on esp32 not S2 version and use hardware on ledc peripherial.
 		
 		// the low-speed software based peripherial on esp32-s2 seems to not multiplex while async tasks are running (cpu starved?)
@@ -47,17 +46,14 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 
 	// When both buttons are released...
 	if (!BTN_0_PIN_STATE && !BTN_1_PIN_STATE) {
-		// begin LED fade.
-		fadeUpdate();
 		// Immediate stop stepper from running tasks.
 		stop(&stepperMotor_1);	
 
 		// See if LED is on/off
-		if (!getLEDState()) {
+		if (getLEDState()) {
 			BaseType_t xHigherPriorityTaskWoken = pdTRUE;
 			// Signal to task to start fading.
 			xTaskNotifyFromISR(xHandleLEDFade, 1, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
-			portYIELD_FROM_ISR();
 		}
 
 	}

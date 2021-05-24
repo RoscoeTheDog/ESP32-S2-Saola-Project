@@ -177,7 +177,7 @@ inline long nextAction(StepperHandler_t *stepper_handler){
         /*
          * DIR pin is sampled on rising STEP edge, so it is set first
          */
-		gpio_set_level(stepper_handler->configuration->direction_pin, HIGH);
+		gpio_set_level(stepper_handler->configuration->direction_pin, stepper_handler->direction_state);
 		gpio_set_level(stepper_handler->configuration->step_pin, HIGH);
         unsigned duty_time = esp_timer_get_time();
         unsigned long pulse = stepper_handler->step_pulse; // save value because calcStepPulse() will overwrite it

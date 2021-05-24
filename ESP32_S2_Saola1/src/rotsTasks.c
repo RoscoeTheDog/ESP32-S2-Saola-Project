@@ -19,19 +19,20 @@ inline void vTaskRotateStepperForward(void * pvPerameters) {
 
 	while(1) {
 		// Block and wait for message to unlock
-		ulTaskNotifyTake(1, portMAX_DELAY);
+		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 		// Schedule task to wdt, so we can reset timeout periodically.
 		esp_task_wdt_add(xHandleCurtainStepperForward);
 
 		// Rotate the stepper motor forward.
 		// We use an interval of 8 degrees so that it has time to run until the ISR checks button state again.
-		move(&stepperMotor_1, calcStepsForRotation(&stepperMotor_1, 8));
+		move(&stepperMotor_1, calcStepsForRotation(&stepperMotor_1, 360));
 
-		// rotate(&stepperMotor_1, 8);
 		// Reset the wdt from this running task
 		esp_task_wdt_reset();
 		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
 		esp_task_wdt_delete(xHandleCurtainStepperForward);
+		// Give idle task a moment to free up any resources
+		vTaskDelay(1);
 	}
 
 }
@@ -40,28 +41,29 @@ inline void vTaskRotateStepperReverse(void * pvPerameters) {
 
 	while(1) {
 		// Block and wait for message to unlock
-		ulTaskNotifyTake(1, portMAX_DELAY);
+		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 		// Schedule task to wdt, so we can reset timeout periodically.
-		esp_task_wdt_add(xHandleCurtainStepperForward);
+		esp_task_wdt_add(xHandleCurtainStepperReverse);
 
 		// Rotate the stepper motor reverse.
 		// We use an interval of 8 degrees so that it has time to run until the ISR checks button state again.
-		move(&stepperMotor_1, -calcStepsForRotation(&stepperMotor_1, 8));
+		move(&stepperMotor_1, -(calcStepsForRotation(&stepperMotor_1, 360)));
 
-		// rotate(&stepperMotor_1, 8);
 		// Reset the wdt from this running task
 		esp_task_wdt_reset();
 		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
-		esp_task_wdt_delete(xHandleCurtainStepperForward);
+		esp_task_wdt_delete(xHandleCurtainStepperReverse);
+		// Give idle task a moment to free up any resources
+		vTaskDelay(1);
 	}
 
 }
 
 inline void vInitTaskCurtainStepper() {
 	xTaskCreate(vTaskRotateStepperForward, "curtainStepperForward", 2048, NULL, 2, &xHandleCurtainStepperForward);
-	xTaskCreate(vTaskRotateStepperReverse, "curtainStepperReverse", 2048, NULL, 2, &xHandleCurtainStepperForward);
+	xTaskCreate(vTaskRotateStepperReverse, "curtainStepperReverse", 2048, NULL, 2, &xHandleCurtainStepperReverse);
 	configASSERT(xHandleCurtainStepperForward);
-	configASSERT(xHandleCurtainStepperForward);
+	configASSERT(xHandleCurtainStepperReverse);
 }
 
 inline void vTaskLEDFade( void * pvParameters)
