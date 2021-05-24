@@ -48,10 +48,9 @@ inline void vInitGPIO(){
 	// gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
 	// gpio_isr_handler_add(BTN_0_PIN, xISR_button_0, 0);
 
-	
 	gpio_config_t BTN_1_CONF;
 	BTN_1_CONF.pin_bit_mask = BTN_1_PIN_SEL;
-	BTN_1_CONF.mode = GPIO_MODE_OUTPUT;
+	BTN_1_CONF.mode = GPIO_MODE_INPUT;
 	BTN_1_CONF.pull_up_en = GPIO_PULLUP_DISABLE;
 	BTN_1_CONF.pull_down_en = GPIO_PULLDOWN_ENABLE;
 	BTN_1_CONF.intr_type = GPIO_INTR_DISABLE;

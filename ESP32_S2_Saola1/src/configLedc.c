@@ -36,3 +36,47 @@ inline void vInitLEDC_0( void ) {
 	// ledc_set_duty_with_hpoint(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 2047, 0);
 	// ledc_set_duty_and_update
 }
+
+// returns true if led duty cycle is active. false if led is off.
+inline bool getLEDState() {
+// Check the switch type. Change the logic accordingly.
+#ifdef BTN_0_LED_DRIVER_N
+	if (LEDC_CHANNEL_0_DUTY == 0) {
+		return false;
+	}
+#endif
+
+#ifdef BTN_0_LED_DRIVER_P
+	if (LEDC_CHANNEL_0_DUTY == LEDC_CHANNEL_0_DUTY_MAX) {
+		return false;
+	}
+#endif
+
+	return true;
+}
+
+inline void setLEDHigh() {
+// Check the switch driver type. Change the output logic accordingly.
+#ifdef BTN_0_LED_DRIVER_N
+	LEDC_CHANNEL_0_DUTY = LEDC_CHANNEL_0_DUTY_MAX;
+#endif
+
+#ifdef BTN_0_LED_DRIVER_P
+	LEDC_CHANNEL_0_DUTY = 0;
+#endif
+
+	ledc_set_duty_with_hpoint(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, LEDC_CHANNEL_0_DUTY, 0);
+}
+
+inline void fadeUpdate() {
+
+#ifdef BTN_0_LED_DRIVER_N
+	LEDC_CHANNEL_0_DUTY--;
+#endif
+
+#ifdef BTN_0_LED_DRIVER_P
+	LEDC_CHANNEL_0_DUTY++;
+#endif
+	ledc_set_duty_with_hpoint(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, LEDC_CHANNEL_0_DUTY, 0);
+}
+

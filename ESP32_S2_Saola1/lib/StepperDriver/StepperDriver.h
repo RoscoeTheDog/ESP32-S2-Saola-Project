@@ -25,14 +25,14 @@ typedef enum StepperMotorState_t{
 } StepperMotorState_t;
 
 typedef struct StepperConfig_t {
-    gpio_num_t direction_pin;
-    gpio_num_t step_pin;
-    gpio_num_t enable_pin;
-	int motor_steps;
-    int enable_active_state;
-    int microstepping;
-    float rpm;
-    StepperDriverMode_t mode;
+    gpio_num_t direction_pin;   // pin to control the direction state
+    gpio_num_t step_pin;        // pin to send pulse to the stepper driver
+    gpio_num_t enable_pin;      // pin to enable the motor control
+	short motor_steps;          // number of steps per revolution
+    bool enable_active_state;   // logic value for the enable pin to be active
+    short microstepping;        // number of microsteps per step
+    short rpm;                  // speed (revolutions per minute)
+    StepperDriverMode_t mode;   // linear or constant modes
 } StepperConfig_t;
 
 typedef struct StepperHandler_t {
@@ -53,7 +53,7 @@ typedef struct StepperHandler_t {
 	int wakeup_time;
 } StepperHandler_t;
 
-extern long getStepPulse(long steps, short microsteps, float rpm);
+extern long getStepPulse(long steps, short microsteps, short rpm);
 
 extern void startMove(StepperHandler_t *stepper_handler, long steps, long time);
 
@@ -77,7 +77,7 @@ extern void setStepperDirection(StepperHandler_t *stepper_handler, unsigned dire
 
 extern float getStepperRPM(StepperHandler_t *stepper_handler);
 
-extern void setStepperRPM(StepperHandler_t *stepper_handler, unsigned rpm);
+extern void setStepperRPM(StepperHandler_t *stepper_handler, short rpm);
 
 extern void setMicrosteps(StepperHandler_t *stepper_handler, short microsteps);
 
@@ -85,13 +85,13 @@ extern unsigned getMicrosteps(StepperHandler_t *stepper_handler);
 
 extern void move(StepperHandler_t *stepper_handler, long steps);
 
-extern void rotate(StepperHandler_t *stepper_handler, double deg);
+extern void rotate(StepperHandler_t *stepper_handler, short deg);
 
 extern long nextAction(StepperHandler_t *stepper_handler);
 
 extern void startMove(StepperHandler_t *stepper_handler, long steps, long time);
 
-extern void startRotate(StepperHandler_t *stepper_handler, long deg);
+extern void startRotate(StepperHandler_t *stepper_handler, short deg);
 
 extern void startBrake(StepperHandler_t *stepper_handler);
 
@@ -99,6 +99,6 @@ extern long stop(StepperHandler_t *stepper_handler);
 
 extern long getTimeForMove(StepperHandler_t *stepper_handler, long steps);
 
-extern long calcStepsForRotation(StepperHandler_t *stepper_motor, double deg);
+extern long calcStepsForRotation(StepperHandler_t *stepper_motor, short deg);
 
 #endif

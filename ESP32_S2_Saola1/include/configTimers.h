@@ -11,7 +11,7 @@ extern void vInitTimer_0();
 
 extern void vInitTimer_1();
 
-extern void vUpdateLEDFade();
+extern void fadeUpdate();
 
 extern void vSetLEDFadePeriod(int ms);
 

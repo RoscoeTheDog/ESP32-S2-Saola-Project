@@ -3,18 +3,6 @@
 timer_config_t config_timer_0;
 timer_config_t config_timer_1;
 
-inline void vUpdateLEDFade() {
-
-#ifdef BTN_0_LED_DRIVER_N
-	LEDC_CHANNEL_0_DUTY--;
-#endif
-
-#ifdef BTN_0_LED_DRIVER_P
-	LEDC_CHANNEL_0_DUTY++;
-#endif
-	ledc_set_duty_with_hpoint(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, LEDC_CHANNEL_0_DUTY, 0);
-}
-
 inline void vSetLEDFadePeriod(int ms) {
 
 	int timer_0_frequency = APB_CLK_FREQ/config_timer_0.divider;
@@ -44,7 +32,7 @@ inline void vInitTimer_0() {
 
 	// alarm value is number of cycle periods the timer has elapsed.
 	// example: if set at 5khz speed, then 5,000hz/5 tics = 1,000 us/period or 0.001 second (1ms)
-	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000);
+	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000 * 120);
 	// Attach a callback (isr)
 	timer_isr_callback_add(TIMER_GROUP_0, TIMER_0, xISR_button_0, NULL, ESP_INTR_FLAG_IRAM);
 

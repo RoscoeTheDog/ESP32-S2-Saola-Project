@@ -4,61 +4,63 @@
 #include <configSteppers.h>
 #include <rtosTasks.h>
 
+BaseType_t xHigherPriorityTaskWoken = pdTRUE;
+volatile bool BTN_0_PIN_STATE;
+volatile bool BTN_1_PIN_STATE;
+
+void updateButtonsState() {
+	// do this once every interrupt, as to avoid checking the pin logic multiple times.
+	BTN_0_PIN_STATE = gpio_get_level(BTN_0_PIN);
+	BTN_1_PIN_STATE = gpio_get_level(BTN_1_PIN);
+}
+
+// All interrupts must be declared as a boolean to signify if they yield or not.
+// IRAM_ATTR flag tells the compiler to keep it in internal memory rather than flash. It is much faster this way.
+// *args are not neccessary, but can be used to pass in an object with multiple arguments.
 extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 
-	if (gpio_get_level(BTN_0_PIN)){
-// Check the switch driver type. Change the output logic accordingly.
-#ifdef BTN_0_LED_DRIVER_N
-		LEDC_CHANNEL_0_DUTY = LEDC_CHANNEL_0_DUTY_MAX;
-#endif
-#ifdef BTN_0_LED_DRIVER_P
-		LEDC_CHANNEL_0_DUTY = 0;
-#endif
-		// xTimerStop(xHandleTimerLED, 0);
-		ledc_set_duty_with_hpoint(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, LEDC_CHANNEL_0_DUTY, 0);
-		BaseType_t xHigherPriorityTaskWoken = pdTRUE;
-		xTaskNotifyFromISR(xHandleCurtainStepper, 1, eSetValueWithoutOverwrite, &xHigherPriorityTaskWoken);
-		// rotate(&stepperMotor_1, 1); // TODO: make this asyncronous. just give some large amount of steps. We will invoke stop when done.
+	// Poll the buttons for any changes.
+	updateButtonsState();
+
+	if (BTN_0_PIN_STATE){
+
+		// TODO: test this code on esp32 not S2 version and use hardware on ledc peripherial.
+		
+		// the low-speed software based peripherial on esp32-s2 seems to not multiplex while async tasks are running (cpu starved?)
+		// if (LEDC_CHANNEL_0_DUTY < LEDC_CHANNEL_0_DUTY_MAX) {
+
+		// Update the duty cycle of the LED PWM
+		setLEDHigh();
+
+		// }
+		// Notify task to rotate the motor. Incriment by two in case it finishes before the buttons state is updated.
+		xTaskNotifyFromISR(xHandleCurtainStepperForward, 2, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
 	}
 
 	// TODO: Button 2
-	// if (gpio_get_level(BTN_1_PIN)) {
-	// 	LEDC_CHANNEL_0_DUTY = LEDC_CHANNEL_0_DUTY_MAX;
-	// 	ledc_set_duty(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, LEDC_CHANNEL_0_DUTY);		
-	// 	// StepperMotorTest.rotate(1);
-	// }
+	if (BTN_1_PIN_STATE) {
+		// Update the duty cycle of the LED PWM
+		setLEDHigh();
+		// Notify task to rotate the motor. Incriment by two in case it finishes before the buttons state is updated.
+		xTaskNotifyFromISR(xHandleCurtainStepperReverse, 2, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+	}
 
-	if (!gpio_get_level(BTN_0_PIN)) {
-#ifdef BTN_0_LED_DRIVER_N
+	// When both buttons are released...
+	if (!BTN_0_PIN_STATE && !BTN_1_PIN_STATE) {
+		// begin LED fade.
+		fadeUpdate();
+		// Immediate stop stepper from running tasks.
+		stop(&stepperMotor_1);	
 
-		// xTimerStart(xHandleTimerLED, 0);
-
-		// stop(&stepperMotor_1);	// Immediate stop and clear steps. Returns leftover steps if needed.
-
-		// if (LEDC_CHANNEL_0_DUTY > 0) {
-		// 	vUpdateLEDFade();
-		// }
-
-		if (LEDC_CHANNEL_0_DUTY == LEDC_CHANNEL_0_DUTY_MAX) {
+		// See if LED is on/off
+		if (!getLEDState()) {
 			BaseType_t xHigherPriorityTaskWoken = pdTRUE;
-			// xTaskNotify(xHandleLEDFade, 1, eSetValueWithOverwrite);
-			xTaskNotifyFromISR(xHandleLEDFade, 1, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
-			stop(&stepperMotor_1);
-		}
-
-		portYIELD_FROM_ISR();
-		
-#endif
-#ifdef BTN_0_LED_DRIVER_P
-		vUpdateLEDFade();
-		if (LEDC_CHANNEL_0_DUTY == 0) {
-			BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-			// xTaskNotify(xHandleLEDFade, 1, eSetValueWithOverwrite);
+			// Signal to task to start fading.
 			xTaskNotifyFromISR(xHandleLEDFade, 1, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
 			portYIELD_FROM_ISR();
 		}
-#endif
+
 	}
 
-	return false;
+	return true;
 }

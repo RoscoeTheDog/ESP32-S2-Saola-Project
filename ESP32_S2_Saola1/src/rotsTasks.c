@@ -11,27 +11,57 @@
 
 TaskHandle_t xHandleRTOSDebug = NULL;
 TaskHandle_t xHandleLEDFade = NULL;
-TaskHandle_t xHandleCurtainStepper = NULL;
+TaskHandle_t xHandleCurtainStepperForward = NULL;
+TaskHandle_t xHandleCurtainStepperReverse = NULL;
 TimerHandle_t xHandleTimerLED = NULL;
 
-inline void vTaskCurtainStepper(void * pvPerameters) {
+inline void vTaskRotateStepperForward(void * pvPerameters) {
 
 	while(1) {
 		// Block and wait for message to unlock
-		ulTaskNotifyTake(0, portMAX_DELAY);
-		esp_task_wdt_add(xHandleCurtainStepper);
-		printf("Hello world!\n");
+		ulTaskNotifyTake(1, portMAX_DELAY);
+		// Schedule task to wdt, so we can reset timeout periodically.
+		esp_task_wdt_add(xHandleCurtainStepperForward);
+
+		// Rotate the stepper motor forward.
+		// We use an interval of 8 degrees so that it has time to run until the ISR checks button state again.
+		move(&stepperMotor_1, calcStepsForRotation(&stepperMotor_1, 8));
+
+		// rotate(&stepperMotor_1, 8);
+		// Reset the wdt from this running task
 		esp_task_wdt_reset();
-		rotate(&stepperMotor_1, 1);
-		xTaskNotify(xHandleCurtainStepper, 0, eSetValueWithOverwrite);
-		esp_task_wdt_delete(xHandleCurtainStepper);
+		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
+		esp_task_wdt_delete(xHandleCurtainStepperForward);
+	}
+
+}
+
+inline void vTaskRotateStepperReverse(void * pvPerameters) {
+
+	while(1) {
+		// Block and wait for message to unlock
+		ulTaskNotifyTake(1, portMAX_DELAY);
+		// Schedule task to wdt, so we can reset timeout periodically.
+		esp_task_wdt_add(xHandleCurtainStepperForward);
+
+		// Rotate the stepper motor reverse.
+		// We use an interval of 8 degrees so that it has time to run until the ISR checks button state again.
+		move(&stepperMotor_1, -calcStepsForRotation(&stepperMotor_1, 8));
+
+		// rotate(&stepperMotor_1, 8);
+		// Reset the wdt from this running task
+		esp_task_wdt_reset();
+		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
+		esp_task_wdt_delete(xHandleCurtainStepperForward);
 	}
 
 }
 
 inline void vInitTaskCurtainStepper() {
-	xTaskCreate(vTaskCurtainStepper, "curtainStepper", 2048, NULL, 25, &xHandleCurtainStepper);
-	configASSERT(xHandleCurtainStepper);
+	xTaskCreate(vTaskRotateStepperForward, "curtainStepperForward", 2048, NULL, 2, &xHandleCurtainStepperForward);
+	xTaskCreate(vTaskRotateStepperReverse, "curtainStepperReverse", 2048, NULL, 2, &xHandleCurtainStepperForward);
+	configASSERT(xHandleCurtainStepperForward);
+	configASSERT(xHandleCurtainStepperForward);
 }
 
 inline void vTaskLEDFade( void * pvParameters)
@@ -45,25 +75,24 @@ inline void vTaskLEDFade( void * pvParameters)
 
 	while(1) {
 		// blocks and waits for a notification. See peram details for more behavior info.
-		// xTaskNotifyWait(0, ULONG_MAX, NULL, portMAX_DELAY);
-		ulTaskNotifyTake(0, ULONG_MAX);
+		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+		// schedule task to wdt, so we can manually reset periodically
 		esp_task_wdt_add(xHandleLEDFade);
 
-		// print some stuff for debugging.
-		printf("%s%i\n", "Duty Value: ", (int)LEDC_CHANNEL_0_DUTY);
-
+		// update tics at time of invocation of task
 		if (firstRun) {
 			ticsElapsed = esp_timer_get_time();
 			firstRun = false;
 		}
-		// Find the time delta between the last time this task got CPU usage.
+
+		// Find the delta between the last time the task ran, and the current point in time.
 		ticsElapsed += esp_timer_get_time() - ticsElapsed;
 
 		if (ticsElapsed >= ticInterval) {
 
 #ifdef BTN_0_LED_DRIVER_N
-			// This prevents unsigned from wrapping around to uint max
-			if ((int)LEDC_CHANNEL_0_DUTY > 0) {
+
+			if (LEDC_CHANNEL_0_DUTY > 0) {
 				LEDC_CHANNEL_0_DUTY--;
 				ledc_set_duty_with_hpoint(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, (uint32_t)LEDC_CHANNEL_0_DUTY, 0);
 			}
@@ -93,21 +122,28 @@ inline void vTaskLEDFade( void * pvParameters)
 #endif
 
 #ifdef BTN_0_LED_DRIVER_P
+			// block if fade is completed.
 			if ((int)LEDC_CHANNEL_0_DUTY >= LEDC_CHANNEL_0_DUTY_MAX) {
+				// update state
 				LEDC_CHANNEL_0_DUTY = LEDC_CHANNEL_0_DUTY_MAX;
+				// reset initializers
 				ticsElapsed = 0;
 				firstRun = true;
-				// Tell task to block task when fade is complete.
+				// This shouldn't be needed, but enforce blocking.
 				xTaskNotify(xHandleLEDFade, 0, eSetValueWithOverwrite);
 			}
-			else {	// Continue while loop
-				xTaskNotify(xHandleLEDFade, 1, eSetValueWithOverwrite);
+			else {	// Continue looping
+				xTaskNotify(xHandleLEDFade, 1, eIncrement);
 			}
 #endif
-			// Reset the task.
-			esp_task_wdt_reset();
-			vTaskDelay(1);
 		}
+
+		// tell the wdt that this task is OK to be consuming lots of CPU time (it's low priority, but high consumption)
+		esp_task_wdt_reset();
+
+		// delay for 1ms to let idle task free up any resources
+		// This is actually 0.1 ms when CONFIG_FREERTOS_HZ = 1000.
+		vTaskDelay(1);
 	}
 
 }

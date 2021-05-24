@@ -11,11 +11,8 @@
 #define DEFAULT_DECELERATION 1000
 #define MIN_YIELD_MICROS 50
 
-inline long getStepPulse(long steps, short microsteps, float rpm) {
-	long s = steps;
-	short m = microsteps;
-	float f = rpm;
-	return 60.0*1000000L/s/m/f;
+inline long getStepPulse(long steps, short microsteps, short rpm) {
+	return 60.0*1000000L/steps/microsteps/rpm;
 }
 
 inline void delayMicros(unsigned long delay_us, unsigned long start_us){
@@ -139,7 +136,7 @@ inline float getStepperRPM(StepperHandler_t *stepper_handler) {
 	return stepper_handler->configuration->rpm;
 }
 
-inline void setStepperRPM(StepperHandler_t *stepper_handler, unsigned rpm) {
+inline void setStepperRPM(StepperHandler_t *stepper_handler, short rpm) {
 	stepper_handler->configuration->rpm = rpm;
 }
 
@@ -166,7 +163,7 @@ inline void move(StepperHandler_t *stepper_handler, long steps){
  * Note that using this function even once will add 1K to your program size
  * due to inclusion of float support.
  */
-inline void rotate(StepperHandler_t *stepper_handler, double deg){
+inline void rotate(StepperHandler_t *stepper_handler, short deg){
     move(stepper_handler, calcStepsForRotation(stepper_handler, deg));
 }
 
@@ -180,17 +177,18 @@ inline long nextAction(StepperHandler_t *stepper_handler){
         /*
          * DIR pin is sampled on rising STEP edge, so it is set first
          */
-		gpio_set_level(2, HIGH);
-		gpio_set_level(1, HIGH);
+		gpio_set_level(stepper_handler->configuration->direction_pin, HIGH);
+		gpio_set_level(stepper_handler->configuration->step_pin, HIGH);
         unsigned duty_time = esp_timer_get_time();
         unsigned long pulse = stepper_handler->step_pulse; // save value because calcStepPulse() will overwrite it
         calcStepPulse(stepper_handler);
         // We should pull HIGH for at least 1-2us (step_high_min)
         delayMicros(stepper_handler->step_high_min, 0);
-		gpio_set_level(1, LOW);
+		gpio_set_level(stepper_handler->configuration->step_pin, LOW);
         // account for calcStepPulse() execution time; sets ceiling for max rpm on slower MCUs
         stepper_handler->last_action_end = esp_timer_get_time();
         duty_time = stepper_handler->last_action_end - duty_time;
+		// Actual time it took to execute.
         stepper_handler->next_action_interval = (pulse > duty_time) ? pulse - duty_time : 1;
     } else {
         // end of move
@@ -211,7 +209,7 @@ inline void startMove(StepperHandler_t *stepper_handler, long steps, long time){
     stepper_handler->steps_remaining = labs(steps);
     stepper_handler->step_count = 0;
     stepper_handler->rest = 0;
-    switch ((int)stepper_handler->configuration->mode){
+    switch (stepper_handler->configuration->mode){
 
 		case LINEAR_SPEED:
 			// speed is in [steps/s]
@@ -258,7 +256,7 @@ inline void startMove(StepperHandler_t *stepper_handler, long steps, long time){
  * Move the motor an integer number of degrees (360 = full rotation)
  * This has poor precision for small amounts, since step is usually 1.8deg
  */
-inline void startRotate(StepperHandler_t *stepper_handler, long deg){
+inline void startRotate(StepperHandler_t *stepper_handler, short deg){
     startMove(stepper_handler, calcStepsForRotation(stepper_handler, deg), 0L);
 }
 
@@ -316,6 +314,6 @@ inline long getTimeForMove(StepperHandler_t *stepper_handler, long steps){
     return round(t);
 }
 
-inline long calcStepsForRotation(StepperHandler_t *stepper_handler, double deg){
+inline long calcStepsForRotation(StepperHandler_t *stepper_handler, short deg){
 	return deg * stepper_handler->configuration->motor_steps * stepper_handler->configuration->microstepping / 360;
 }
