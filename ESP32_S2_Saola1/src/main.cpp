@@ -30,8 +30,11 @@ void app_main(void) {
 	vInitTaskLEDFade();
 	vInitCurtainStepper();
 	vInitTaskCurtainStepper();
-	rotate(&stepperMotor_1, 360 * 5);
+	vInitTaskCloseCurtains();
 	vInitTimer_0();	// starts button interrupts.
+	// xTaskNotify(xHandleCloseCurtains, 1, eSetValueWithOverwrite);
+	
+	// rotate(&stepperMotor_1, 360 * 5);
 	
 }
 

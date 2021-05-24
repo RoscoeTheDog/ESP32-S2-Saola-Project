@@ -17,10 +17,16 @@
 
 // Create all handlers for task function callbacks. It is a pointer, so we can init it to null.
 extern TaskHandle_t xHandleLEDFade;
+extern TimerHandle_t xHandleTimerLED;
 extern TaskHandle_t xHandleRTOSDebug;
 extern TaskHandle_t xHandleCurtainStepperForward;
 extern TaskHandle_t xHandleCurtainStepperReverse;
-extern TimerHandle_t xHandleTimerLED;
+extern TaskHandle_t xHandleOpenCurtains;
+extern TaskHandle_t xHandleCloseCurtains;
+
+extern void vInitTaskCloseCurtains();
+
+extern void vTaskCloseCurtains( void * pvPerameters);
 
 extern void vTaskRotateStepperForward(void * pvPerameters);
 

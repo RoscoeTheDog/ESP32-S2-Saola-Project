@@ -3,6 +3,8 @@
 #include <esp_task_wdt.h>
 #include <StepperDriver.h>
 #include <configSteppers.h>
+#include <math.h>
+#include <config.h>
 /*
 	Define all of your callback functions here.
 
@@ -11,9 +13,81 @@
 
 TaskHandle_t xHandleRTOSDebug = NULL;
 TaskHandle_t xHandleLEDFade = NULL;
+TimerHandle_t xHandleTimerLED = NULL;
+TaskHandle_t xHandleOpenCurtains = NULL;
+TaskHandle_t xHandleCloseCurtains = NULL;
 TaskHandle_t xHandleCurtainStepperForward = NULL;
 TaskHandle_t xHandleCurtainStepperReverse = NULL;
-TimerHandle_t xHandleTimerLED = NULL;
+
+inline void vTaskOpenCurtains(void * pvPerameters) {
+
+	while(1) {
+		// Block and wait for message to unlock
+		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+		// Schedule task to wdt, so we can reset timeout periodically.
+		esp_task_wdt_add(xHandleCurtainStepperForward);
+
+		// Rotate the stepper motor forward.
+		// We use an interval of 360 degrees so that it has time to run until the ISR checks button state again.
+		move(&stepperMotor_1, calcStepsForRotation(&stepperMotor_1, 360));
+
+		// Reset the wdt from this running task
+		esp_task_wdt_reset();
+		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
+		esp_task_wdt_delete(xHandleCurtainStepperForward);
+		// Give idle task a moment to free up any resources
+		vTaskDelay(1);
+	}
+
+}
+
+inline void vTaskCloseCurtains( void * pvPerameters) {
+	float distance = HEIGHT_INCHES * 25.4;	// 25.4mm per inch.
+	printf("distance (inches): %f\n", distance);
+	float circumference = 2 * M_PI * (DIAMETER_MM/2);	// find the circumference (2 * pi * r)
+	printf("circumference (mm): %f\n", circumference);
+	int revolutionsToTarget = distance / circumference;
+	printf("revolution to target (revs): %i\n", revolutionsToTarget);
+	short completed = 0;
+
+	while(1) {
+		// Block and wait for message to unlock
+		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+		// Schedule task to wdt, so we can reset timeout periodically.
+		esp_task_wdt_add(xHandleCloseCurtains);
+
+		move(&stepperMotor_1, calcStepsForRotation(&stepperMotor_1, 360));
+		completed++;
+
+		if (completed < revolutionsToTarget) {
+			// Reset the wdt from this running task
+			esp_task_wdt_reset();
+			// Continue the task until the amount of revolutions has been reached
+			xTaskNotify(xHandleCloseCurtains, 1, eIncrement);
+			// Give idle task a moment to free up any resources
+			vTaskDelay(1);
+		} else {
+			// Tell the task to stop running.
+			xTaskNotify(xHandleCloseCurtains, 0, eSetValueWithOverwrite);
+			// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
+			esp_task_wdt_delete(xHandleCloseCurtains);
+			// reset the completed revolution counter
+			completed = 0;
+		}
+
+	}
+
+}
+
+inline void vInitTaskOpenCurtains() {
+	xTaskCreate(vTaskOpenCurtains, "curtainOpen", 2048, NULL, 25, &xHandleOpenCurtains);
+	configASSERT(xHandleOpenCurtains);
+}
+
+inline void vInitTaskCloseCurtains() {
+	xTaskCreate(vTaskCloseCurtains, "curtainClose", 2048, NULL, 25, &xHandleCloseCurtains);
+	configASSERT(xHandleCloseCurtains);
+}
 
 inline void vTaskRotateStepperForward(void * pvPerameters) {
 
@@ -24,7 +98,7 @@ inline void vTaskRotateStepperForward(void * pvPerameters) {
 		esp_task_wdt_add(xHandleCurtainStepperForward);
 
 		// Rotate the stepper motor forward.
-		// We use an interval of 8 degrees so that it has time to run until the ISR checks button state again.
+		// We use an interval of 360 degrees so that it has time to run until the ISR checks button state again.
 		move(&stepperMotor_1, calcStepsForRotation(&stepperMotor_1, 360));
 
 		// Reset the wdt from this running task
@@ -46,7 +120,7 @@ inline void vTaskRotateStepperReverse(void * pvPerameters) {
 		esp_task_wdt_add(xHandleCurtainStepperReverse);
 
 		// Rotate the stepper motor reverse.
-		// We use an interval of 8 degrees so that it has time to run until the ISR checks button state again.
+		// We use an interval of 360 degrees so that it has time to run until the ISR checks button state again.
 		move(&stepperMotor_1, -(calcStepsForRotation(&stepperMotor_1, 360)));
 
 		// Reset the wdt from this running task
