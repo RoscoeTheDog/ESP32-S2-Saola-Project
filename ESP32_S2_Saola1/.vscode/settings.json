@@ -86,6 +86,7 @@
 		"configtimers.h": "c",
 		"stepperdriver.h": "c",
 		"math.h": "c",
-		"esp_timer.h": "c"
+		"esp_timer.h": "c",
+		"configsteppers.h": "c"
 	}
 }

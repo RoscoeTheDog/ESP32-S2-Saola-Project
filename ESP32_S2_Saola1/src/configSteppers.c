@@ -1,6 +1,6 @@
 #include <configSteppers.h>
 
-StepperHandler_t stepperMotor_1;
+StepperHandle_t stepperMotor_1;
 StepperConfig_t stepperConfig;
 
 inline void vInitCurtainStepper() {

@@ -5,6 +5,7 @@
 #include "configGpio.h"
 #include <rtosTasks.h>
 #include <configTimers.h>
+#include <freertos/task.h>
 
 /*
 	If you called FreeRTOS functions in callback, you need to return true or false based on the retrun value of argument pxHigherPriorityTaskWoken. 

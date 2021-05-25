@@ -3,6 +3,8 @@
 #include <StepperDriver.h>
 #include <configSteppers.h>
 #include <rtosTasks.h>
+#include <freertos/task.h>
+#include <freertos/FreeRTOS.h>
 
 BaseType_t xHigherPriorityTaskWoken = pdTRUE;
 volatile bool BTN_0_PIN_STATE;
@@ -26,11 +28,9 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 		// TODO: test this code on esp32 not S2 version and use hardware on ledc peripherial.
 		
 		// the low-speed software based peripherial on esp32-s2 seems to not multiplex while async tasks are running (cpu starved?)
-		// if (LEDC_CHANNEL_0_DUTY < LEDC_CHANNEL_0_DUTY_MAX) {
-
-		// Update the duty cycle of the LED PWM
-		setLEDHigh();
-
+		// if (LEDC_CHANNEL_0_DUTY < 2047) {
+			// Update the duty cycle of the LED PWM
+			setLEDHigh();
 		// }
 		// Notify task to rotate the motor. Incriment by two in case it finishes before the buttons state is updated.
 		xTaskNotifyFromISR(xHandleCurtainStepperForward, 2, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
@@ -46,8 +46,12 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 
 	// When both buttons are released...
 	if (!BTN_0_PIN_STATE && !BTN_1_PIN_STATE) {
-		// Immediate stop stepper from running tasks.
-		stop(&stepperMotor_1);	
+
+		// Check if any prioritized tasks are running.
+		if (eTaskGetState(xHandleCloseCurtains) != eRunning) {
+			// Immediate stop stepper from running tasks.
+			stop(&stepperMotor_1);	
+		}
 
 		// See if LED is on/off
 		if (getLEDState()) {

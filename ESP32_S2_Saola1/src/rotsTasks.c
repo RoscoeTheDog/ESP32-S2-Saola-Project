@@ -18,12 +18,15 @@ TaskHandle_t xHandleOpenCurtains = NULL;
 TaskHandle_t xHandleCloseCurtains = NULL;
 TaskHandle_t xHandleCurtainStepperForward = NULL;
 TaskHandle_t xHandleCurtainStepperReverse = NULL;
+portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
 inline void vTaskOpenCurtains(void * pvPerameters) {
 
 	while(1) {
 		// Block and wait for message to unlock
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+		
+		
 		// Schedule task to wdt, so we can reset timeout periodically.
 		esp_task_wdt_add(xHandleCurtainStepperForward);
 
@@ -36,23 +39,28 @@ inline void vTaskOpenCurtains(void * pvPerameters) {
 		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
 		esp_task_wdt_delete(xHandleCurtainStepperForward);
 		// Give idle task a moment to free up any resources
-		vTaskDelay(1);
+		// vTaskDelay(1);
+		
 	}
 
 }
 
 inline void vTaskCloseCurtains( void * pvPerameters) {
 	float distance = HEIGHT_INCHES * 25.4;	// 25.4mm per inch.
-	printf("distance (inches): %f\n", distance);
+	// printf("distance (inches): %f\n", distance);
 	float circumference = 2 * M_PI * (DIAMETER_MM/2);	// find the circumference (2 * pi * r)
-	printf("circumference (mm): %f\n", circumference);
+	// printf("circumference (mm): %f\n", circumference);
 	int revolutionsToTarget = distance / circumference;
-	printf("revolution to target (revs): %i\n", revolutionsToTarget);
+	// printf("revolution to target (revs): %i\n", revolutionsToTarget);
 	short completed = 0;
 
 	while(1) {
 		// Block and wait for message to unlock
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+		// https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-reference/system/wdts.html
+		// portENTER_CRITICAL(&mux);
+		// portDISABLE_INTERRUPTS();
+
 		// Schedule task to wdt, so we can reset timeout periodically.
 		esp_task_wdt_add(xHandleCloseCurtains);
 
@@ -73,6 +81,11 @@ inline void vTaskCloseCurtains( void * pvPerameters) {
 			esp_task_wdt_delete(xHandleCloseCurtains);
 			// reset the completed revolution counter
 			completed = 0;
+
+			// portEXIT_CRITICAL_ISR(&mux);
+			// portENABLE_INTERRUPTS();
+			// esp_int_wdt_cpu_init();
+			// esp_int_wdt_init();
 		}
 
 	}
