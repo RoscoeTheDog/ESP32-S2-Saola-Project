@@ -32,7 +32,7 @@ inline void vTaskOpenCurtains(void * pvPerameters) {
 
 		// Rotate the stepper motor forward.
 		// We use an interval of 360 degrees so that it has time to run until the ISR checks button state again.
-		move(&stepperMotor_1, calcStepsForRotation(&stepperMotor_1, 360));
+		move(stepperMotor_1, calcStepsForRotation(stepperMotor_1, 360));
 
 		// Reset the wdt from this running task
 		esp_task_wdt_reset();
@@ -64,7 +64,7 @@ inline void vTaskCloseCurtains( void * pvPerameters) {
 		// Schedule task to wdt, so we can reset timeout periodically.
 		esp_task_wdt_add(xHandleCloseCurtains);
 
-		move(&stepperMotor_1, calcStepsForRotation(&stepperMotor_1, 360));
+		move(stepperMotor_1, calcStepsForRotation(stepperMotor_1, 360));
 		completed++;
 
 		if (completed < revolutionsToTarget) {
@@ -112,7 +112,7 @@ inline void vTaskRotateStepperForward(void * pvPerameters) {
 
 		// Rotate the stepper motor forward.
 		// We use an interval of 360 degrees so that it has time to run until the ISR checks button state again.
-		move(&stepperMotor_1, calcStepsForRotation(&stepperMotor_1, 360));
+		move(stepperMotor_1, calcStepsForRotation(stepperMotor_1, 360));
 
 		// Reset the wdt from this running task
 		esp_task_wdt_reset();
@@ -134,7 +134,7 @@ inline void vTaskRotateStepperReverse(void * pvPerameters) {
 
 		// Rotate the stepper motor reverse.
 		// We use an interval of 360 degrees so that it has time to run until the ISR checks button state again.
-		move(&stepperMotor_1, -(calcStepsForRotation(&stepperMotor_1, 360)));
+		move(stepperMotor_1, -(calcStepsForRotation(stepperMotor_1, 360)));
 
 		// Reset the wdt from this running task
 		esp_task_wdt_reset();

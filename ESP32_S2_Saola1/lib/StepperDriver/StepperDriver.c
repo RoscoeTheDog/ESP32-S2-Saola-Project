@@ -63,7 +63,7 @@ inline void calcStepPulse(StepperHandle_t *stepper_handler){
     }
 }
 
-inline StepperHandle_t createStepperHandler(StepperConfig_t *configuration) {
+inline StepperHandle_t* createStepperHandler(StepperConfig_t *configuration) {
 	// malloc syntax:
 	// ptr = (cast-type*) malloc(byte-size)
     StepperHandle_t *new_stepper = (StepperHandle_t*)malloc(sizeof(StepperHandle_t));	// allocated dynamically, so it is not terminated when exiting scope.
@@ -84,7 +84,7 @@ inline StepperHandle_t createStepperHandler(StepperConfig_t *configuration) {
 	new_stepper->next_action_interval = 0;
 	new_stepper->last_action_end = 0;
 	enableStepper(new_stepper);
-    return *new_stepper;
+    return new_stepper;
 }
 
 inline StepperMotorState_t getMotorState(StepperHandle_t *StepperHandler) {

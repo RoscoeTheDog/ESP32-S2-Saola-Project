@@ -53,6 +53,9 @@ typedef struct StepperHandle_t {
 	int wakeup_time;
 } StepperHandle_t;
 
+
+extern StepperHandle_t* createStepperHandler(StepperConfig_t *configuration);
+
 extern long getStepPulse(long steps, short microsteps, short rpm);
 
 extern void startMove(StepperHandle_t *stepper_handler, long steps, long time);
@@ -60,8 +63,6 @@ extern void startMove(StepperHandle_t *stepper_handler, long steps, long time);
 extern void delayMicros(unsigned long delay_us, unsigned long start_us);
 
 extern void calcStepPulse(StepperHandle_t *stepper_handler);
-
-extern StepperHandle_t createStepperHandler(StepperConfig_t *configuration);
 
 extern StepperMotorState_t getMotorState(StepperHandle_t *Stepperhandler);
 

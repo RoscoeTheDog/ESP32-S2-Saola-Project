@@ -33,7 +33,7 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 			setLEDHigh();
 		// }
 		// Notify task to rotate the motor. Incriment by two in case it finishes before the buttons state is updated.
-		xTaskNotifyFromISR(xHandleCurtainStepperForward, 2, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+		xTaskNotifyFromISR(xHandleCurtainStepperForward, 1, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
 	}
 
 	// TODO: Button 2
@@ -41,7 +41,7 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 		// Update the duty cycle of the LED PWM
 		setLEDHigh();
 		// Notify task to rotate the motor. Incriment by two in case it finishes before the buttons state is updated.
-		xTaskNotifyFromISR(xHandleCurtainStepperReverse, 2, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+		xTaskNotifyFromISR(xHandleCurtainStepperReverse, 1, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
 	}
 
 	// When both buttons are released...
@@ -50,7 +50,7 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 		// Check if any prioritized tasks are running.
 		if (eTaskGetState(xHandleCloseCurtains) != eRunning) {
 			// Immediate stop stepper from running tasks.
-			stop(&stepperMotor_1);	
+			stop(stepperMotor_1);	
 		}
 
 		// See if LED is on/off

@@ -32,7 +32,6 @@ void app_main(void) {
 	vInitTaskCurtainStepper();
 	vInitTaskCloseCurtains();
 	vInitTimer_0();	// starts button interrupts.
-	vTaskDelay(500);
 	xTaskNotify(xHandleCloseCurtains, 1, eSetValueWithOverwrite);
 }
 
