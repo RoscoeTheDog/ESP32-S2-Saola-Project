@@ -24,20 +24,24 @@ extern "C" {
 }
 
 void app_main(void) {
-	// Call all ESP-IDF initializers first.
-	vInitTaskRTOSDebug();
+	// Call all initializers first.
+
+	// NOTE: For debugging the stepper driver issue, disable all other microcontroller features/tasks
+	//		 except for what is required (like initializing output pins).
+
+	// vInitTaskRTOSDebug();
 	vInitGPIO();
-	vInitLEDC_0();
-	vInitTaskLEDFade();
-	vInitCurtainStepper();
-	vInitTaskCurtainStepper();
-	vInitTaskCloseCurtains();
-	vInitTimer_0();	// starts button interrupts.
-	xTaskNotify(xHandleCloseCurtains, 1, eSetValueWithOverwrite);
+	// vInitLEDC_0();
+	// vInitTaskLEDFade();
+	// vInitCurtainStepper();
+	// vInitTaskCurtainStepper();
+	// vInitTaskCloseCurtains();
+	// vInitTimer_0();	// starts button interrupts.
+	// xTaskNotify(xHandleCloseCurtains, 1, eSetValueWithOverwrite);
 
+	// Allocated and create a pointer to a stepper config struct.
 	StepperConfig_t *sc = (StepperConfig_t*)malloc(sizeof(StepperConfig_t));
-	printf("sizeof: %u", sizeof(StepperConfig_t));
-
+	// set the used pins and the settings for the motor.
 	sc->step_pin = STEP_PIN;
 	sc->direction_pin = DIR_PIN;
 	sc->enable_pin = EN_PIN;
@@ -47,16 +51,15 @@ void app_main(void) {
 	sc->microstepping = 64;
 	sc->mode = CONSTANT_SPEED;
 
+	// pass the configuration to the create handle method. returns a pointer to a handle type.
 	StepperHandle_t *stepper = createStepperHandler(sc);
 
-	// bug is not caused by interrupts, tested like this:
+	// rotate the motor 360 degrees then wait for 3 seconds.
 	while (1) {
 		rotate(stepper, 360);
 		vTaskDelay(pdMS_TO_TICKS(3 * 1000));
-		// printf("step_pulse: %lo\n", stepper->step_pulse);
-		// printf("steps_remaining: %lo\n", stepper->steps_remaining);
-		// printf("step_count: %lo\n", stepper->step_count);
-		xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
+		// ignore this. the below task can print Task information such as stack size etc but revealed anything useful.
+		// xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
 	}
 
 }
