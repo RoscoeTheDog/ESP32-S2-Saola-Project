@@ -18,8 +18,8 @@
 #define BTN_0_PIN_SEL GPIO_SEL_21
 extern volatile bool BTN_0_PIN_STATE;
 
-#define BTN_0_LED_PIN GPIO_NUM_20
-#define BTN_0_LED_PIN_SEL GPIO_SEL_20
+#define BTN_0_LED_PIN GPIO_NUM_19
+#define BTN_0_LED_PIN_SEL GPIO_SEL_19
 // if using a transistor or mosfet to switch a higher power source, uncomment the appropriate method.
 // #define BTN_0_LED_DRIVER_P
 #define BTN_0_LED_DRIVER_N

@@ -1,7 +1,7 @@
 #include <configSteppers.h>
 
-StepperHandle_t *stepperMotor_1 = NULL;
-StepperConfig_t *stepperConfig = NULL;
+volatile StepperConfig_t *stepperConfig = NULL;
+volatile StepperHandle_t *stepperMotor_1 = NULL;
 
 inline void vInitCurtainStepper() {
 	stepperConfig = (StepperConfig_t*)malloc(sizeof(StepperConfig_t));

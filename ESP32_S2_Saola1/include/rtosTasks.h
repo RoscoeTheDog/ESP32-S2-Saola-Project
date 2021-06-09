@@ -24,7 +24,11 @@ extern TaskHandle_t xHandleCurtainStepperReverse;
 extern TaskHandle_t xHandleOpenCurtains;
 extern TaskHandle_t xHandleCloseCurtains;
 
+extern void vInitTaskOpenCurtains();
+
 extern void vInitTaskCloseCurtains();
+
+extern void vTaskOpenCurtains( void * pvPerameters);
 
 extern void vTaskCloseCurtains( void * pvPerameters);
 

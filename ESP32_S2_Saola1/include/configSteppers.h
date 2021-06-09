@@ -4,8 +4,8 @@
 #include <StepperDriver.h>
 #include <configGpio.h>
 
-extern StepperHandle_t *stepperMotor_1;
-extern StepperConfig_t *stepperConfig;
+extern volatile StepperHandle_t *stepperMotor_1;
+extern volatile StepperConfig_t *stepperConfig;
 
 extern void vInitCurtainStepper();
 

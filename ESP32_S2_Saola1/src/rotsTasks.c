@@ -20,6 +20,16 @@ TaskHandle_t xHandleCurtainStepperForward = NULL;
 TaskHandle_t xHandleCurtainStepperReverse = NULL;
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
+inline void vInitTaskOpenCurtains() {
+	xTaskCreate(vTaskOpenCurtains, "curtainOpen", 2048, NULL, 25, &xHandleOpenCurtains);
+	configASSERT(xHandleOpenCurtains);
+}
+
+inline void vInitTaskCloseCurtains() {
+	xTaskCreate(vTaskCloseCurtains, "curtainClose", 2048, NULL, 25, &xHandleCloseCurtains);
+	configASSERT(xHandleCloseCurtains);
+}
+
 inline void vTaskOpenCurtains(void * pvPerameters) {
 
 	while(1) {
@@ -90,16 +100,6 @@ inline void vTaskCloseCurtains( void * pvPerameters) {
 
 	}
 
-}
-
-inline void vInitTaskOpenCurtains() {
-	xTaskCreate(vTaskOpenCurtains, "curtainOpen", 2048, NULL, 25, &xHandleOpenCurtains);
-	configASSERT(xHandleOpenCurtains);
-}
-
-inline void vInitTaskCloseCurtains() {
-	xTaskCreate(vTaskCloseCurtains, "curtainClose", 2048, NULL, 25, &xHandleCloseCurtains);
-	configASSERT(xHandleCloseCurtains);
 }
 
 inline void vTaskRotateStepperForward(void * pvPerameters) {
@@ -276,7 +276,7 @@ inline void vTaskRTOSDebug( void * pvParameters){
 
 	while(1) {
 
-		if (xTaskNotifyWait(0, 0, NULL, portMAX_DELAY) == pdTRUE) {
+		if (ulTaskNotifyTake(pdFALSE, portMAX_DELAY) == pdTRUE) {
 			char buffer[500];
 			vTaskList(buffer);
 
@@ -285,9 +285,6 @@ inline void vTaskRTOSDebug( void * pvParameters){
 			printf("%s\n", buffer);
 			printf("%s\n", "**********************************");
 		}
-		vTaskDelay(5000 / portTICK_PERIOD_MS);
-		
-		xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
 	}
 
 }
