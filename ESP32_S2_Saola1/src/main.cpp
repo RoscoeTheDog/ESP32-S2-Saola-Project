@@ -40,7 +40,7 @@ void app_main(void) {
 	// xTaskNotify(xHandleCloseCurtains, 1, eSetValueWithOverwrite);
 
 	// Allocated and create a pointer to a stepper config struct.
-	StepperConfig_t *sc = (StepperConfig_t*)malloc(sizeof(StepperConfig_t));
+	StepperConfig_t *sc = (StepperConfig_t*)pvPortMalloc(sizeof(StepperConfig_t));
 	// set the used pins and the settings for the motor.
 	sc->step_pin = STEP_PIN;
 	sc->direction_pin = DIR_PIN;
@@ -60,6 +60,8 @@ void app_main(void) {
 		vTaskDelay(pdMS_TO_TICKS(3 * 1000));
 		// ignore this. the below task can print Task information such as stack size etc but revealed anything useful.
 		// xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
+		printf("heap_caps_get_free_size: %u\n", heap_caps_get_free_size(MALLOC_CAP_8BIT));
+		printf("xPortGetFreeHeapSize: %u\n\n", xPortGetFreeHeapSize());
 	}
 
 }
