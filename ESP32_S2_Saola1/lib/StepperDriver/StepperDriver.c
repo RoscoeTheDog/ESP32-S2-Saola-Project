@@ -1,4 +1,5 @@
 #include <StepperDriver.h>
+#include <freertos/FreeRTOS.h>
 
 /*
  * calculate the step pulse in microseconds for a given rpm value.
@@ -11,11 +12,11 @@
 #define DEFAULT_DECELERATION 1000
 #define MIN_YIELD_MICROS 50
 
-inline long getStepPulse(long steps, short microsteps, short rpm) {
+long getStepPulse(long steps, short microsteps, short rpm) {
 	return 60.0*1000000L/steps/microsteps/rpm;
 }
 
-inline void delayMicros(unsigned long delay_us, unsigned long start_us){
+void delayMicros(unsigned long delay_us, unsigned long start_us){
 	if (delay_us){
 		if (!start_us){
 			start_us = esp_timer_get_time();
@@ -33,7 +34,7 @@ inline void delayMicros(unsigned long delay_us, unsigned long start_us){
 /*
  * calculate the interval til the next pulse
  */
-inline void calcStepPulse(StepperHandle_t *stepper_handler){
+void calcStepPulse(StepperHandle_t *stepper_handler){
     if (stepper_handler->steps_remaining <= 0){  // this should not happen, but avoids strange calculations
         return;
     }
@@ -63,10 +64,10 @@ inline void calcStepPulse(StepperHandle_t *stepper_handler){
     }
 }
 
-inline StepperHandle_t* createStepperHandler(StepperConfig_t *configuration) {
+StepperHandle_t* createStepperHandler(StepperConfig_t *configuration) {
 	// malloc syntax:
 	// ptr = (cast-type*) malloc(byte-size)
-    StepperHandle_t *new_stepper = (StepperHandle_t*)malloc(sizeof(StepperHandle_t));	// allocated dynamically, so it is not terminated when exiting scope.
+    StepperHandle_t *new_stepper = (StepperHandle_t*)pvPortMalloc(sizeof(StepperHandle_t));	// allocated dynamically, so it is not terminated when exiting scope.
 	// TODO: Come back here and validate configuration properties.
     new_stepper->configuration = configuration;
 	new_stepper->motor_state = STOPPED;
@@ -87,7 +88,7 @@ inline StepperHandle_t* createStepperHandler(StepperConfig_t *configuration) {
     return new_stepper;
 }
 
-inline StepperMotorState_t getMotorState(StepperHandle_t *StepperHandler) {
+StepperMotorState_t getMotorState(StepperHandle_t *StepperHandler) {
 
 	if (StepperHandler->steps_remaining <= 0) {
 		StepperHandler->motor_state = STOPPED;
@@ -108,11 +109,11 @@ inline StepperMotorState_t getMotorState(StepperHandle_t *StepperHandler) {
  * Configure which logic state on ENABLE pin means active
  * when using SLEEP (default) this is active HIGH
  */
-inline void setEnableActiveState(StepperHandle_t *StepperHandler, bool state) {
+void setEnableActiveState(StepperHandle_t *StepperHandler, bool state) {
 	StepperHandler->configuration->enable_active_state = state;
 }
 
-inline void disableStepper(StepperHandle_t *StepperHandler) {
+void disableStepper(StepperHandle_t *StepperHandler) {
 	// Ensure the pin has been initialized.
 	// if (check_connected(StepperHandler->configuration->enable_pin)) {
 		// Set the active state, specified by the user and their hardware.
@@ -120,7 +121,7 @@ inline void disableStepper(StepperHandle_t *StepperHandler) {
 	// }
 }
 
-inline void enableStepper(StepperHandle_t *StepperHandler) {
+void enableStepper(StepperHandle_t *StepperHandler) {
 	// Ensure the pin has been initialized.
 	// if (check_connected(StepperHandler->configuration->enable_pin)) {
 		// Set the active state, specified by the user and their hardware.
@@ -128,27 +129,27 @@ inline void enableStepper(StepperHandle_t *StepperHandler) {
 	// }
 }
 
-inline unsigned getStepperDirection(StepperHandle_t *stepper_handler) {
+unsigned getStepperDirection(StepperHandle_t *stepper_handler) {
 	return gpio_get_level(stepper_handler->configuration->direction_pin);
 }
 
-inline void setStepperDirection(StepperHandle_t *stepper_handler, unsigned direction) {
+void setStepperDirection(StepperHandle_t *stepper_handler, unsigned direction) {
 	stepper_handler->direction_state = direction;
 }
 
-inline float getStepperRPM(StepperHandle_t *stepper_handler) {
+float getStepperRPM(StepperHandle_t *stepper_handler) {
 	return stepper_handler->configuration->rpm;
 }
 
-inline void setStepperRPM(StepperHandle_t *stepper_handler, short rpm) {
+void setStepperRPM(StepperHandle_t *stepper_handler, short rpm) {
 	stepper_handler->configuration->rpm = rpm;
 }
 
-inline void setMicrosteps(StepperHandle_t *stepper_handler, short microsteps) {
+void setMicrosteps(StepperHandle_t *stepper_handler, short microsteps) {
 	stepper_handler->configuration->microstepping = microsteps;
 }
 
-inline unsigned getMicrosteps(StepperHandle_t *stepper_handler) {
+unsigned getMicrosteps(StepperHandle_t *stepper_handler) {
 	return stepper_handler->configuration->microstepping;
 }
 
@@ -157,7 +158,7 @@ inline unsigned getMicrosteps(StepperHandle_t *stepper_handler) {
  * Move the motor a given number of steps.
  * positive to move forward, negative to reverse
  */
-inline void move(StepperHandle_t *stepper_handler, long steps){
+void move(StepperHandle_t *stepper_handler, long steps){
 	
     startMove(stepper_handler, steps, 0);
     while (nextAction(stepper_handler));
@@ -168,7 +169,7 @@ inline void move(StepperHandle_t *stepper_handler, long steps){
  * Note that using this function even once will add 1K to your program size
  * due to inclusion of float support.
  */
-inline void rotate(StepperHandle_t *stepper_handler, short deg){
+void rotate(StepperHandle_t *stepper_handler, short deg){
     move(stepper_handler, calcStepsForRotation(stepper_handler, deg));
 }
 
@@ -176,7 +177,7 @@ inline void rotate(StepperHandle_t *stepper_handler, short deg){
  * Yield to step control
  * Toggle step and return time until next change is needed (micros)
  */
-inline long nextAction(StepperHandle_t *stepper_handler){
+long nextAction(StepperHandle_t *stepper_handler){
 	if (stepper_handler->steps_remaining > 0){
         delayMicros(stepper_handler->next_action_interval, stepper_handler->last_action_end);
         /*
@@ -206,7 +207,7 @@ inline long nextAction(StepperHandle_t *stepper_handler){
 /*
  * Set up a new move (calculate and save the parameters)
  */
-inline void startMove(StepperHandle_t *stepper_handler, long steps, long time){
+void startMove(StepperHandle_t *stepper_handler, long steps, long time){
 	float speed;
     // set up new move
     stepper_handler->direction_state = (steps >= 0) ? HIGH : LOW;
@@ -251,7 +252,7 @@ inline void startMove(StepperHandle_t *stepper_handler, long steps, long time){
 			stepper_handler->step_pulse = stepper_handler->cruise_step_pulse = getStepPulse(stepper_handler->configuration->motor_steps, stepper_handler->configuration->microstepping, stepper_handler->configuration->rpm);
 
 			if (time > stepper_handler->steps_remaining * stepper_handler->step_pulse){
-				stepper_handler->step_pulse = (float)time / stepper_handler->steps_remaining;
+				stepper_handler->step_pulse = time / stepper_handler->steps_remaining;
 			}
 
 		}
@@ -261,14 +262,14 @@ inline void startMove(StepperHandle_t *stepper_handler, long steps, long time){
  * Move the motor an integer number of degrees (360 = full rotation)
  * This has poor precision for small amounts, since step is usually 1.8deg
  */
-inline void startRotate(StepperHandle_t *stepper_handler, short deg){
+void startRotate(StepperHandle_t *stepper_handler, short deg){
     startMove(stepper_handler, calcStepsForRotation(stepper_handler, deg), 0L);
 }
 
 /*
  * Brake early.
  */
-inline void startBrake(StepperHandle_t *stepper_handler){
+void startBrake(StepperHandle_t *stepper_handler){
     switch (getMotorState(stepper_handler)){
     case CRUISING:  // this applies to both CONSTANT_SPEED and LINEAR_SPEED modes
         stepper_handler->steps_remaining = stepper_handler->steps_to_brake;
@@ -286,7 +287,7 @@ inline void startBrake(StepperHandle_t *stepper_handler){
 /*
  * Stop movement immediately and return remaining steps.
  */
-inline long stop(StepperHandle_t *stepper_handler){
+long stop(StepperHandle_t *stepper_handler){
     long retval = stepper_handler->steps_remaining;
     stepper_handler->steps_remaining = 0;
     return retval;
@@ -295,7 +296,7 @@ inline long stop(StepperHandle_t *stepper_handler){
 /*
  * Return calculated time to complete the given move
  */
-inline long getTimeForMove(StepperHandle_t *stepper_handler, long steps){
+long getTimeForMove(StepperHandle_t *stepper_handler, long steps){
     float t;
     long cruise_steps;
     float speed;
@@ -319,6 +320,6 @@ inline long getTimeForMove(StepperHandle_t *stepper_handler, long steps){
     return round(t);
 }
 
-inline long calcStepsForRotation(StepperHandle_t *stepper_handler, short deg){
+long calcStepsForRotation(StepperHandle_t *stepper_handler, short deg){
 	return deg * stepper_handler->configuration->motor_steps * stepper_handler->configuration->microstepping / 360;
 }
