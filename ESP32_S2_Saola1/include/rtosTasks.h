@@ -36,7 +36,7 @@ extern void vTaskRotateStepperForward(void * pvPerameters);
 
 extern void vTaskRotateStepperReverse(void * pvPerameters);
 
-extern void vInitTaskCurtainStepper();
+extern void vInitTaskCurtainMotor();
 
 extern void vInitTaskLEDFade( void );
 

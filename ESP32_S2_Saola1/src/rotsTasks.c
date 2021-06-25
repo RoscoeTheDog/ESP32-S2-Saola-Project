@@ -20,17 +20,33 @@ TaskHandle_t xHandleCurtainStepperForward = NULL;
 TaskHandle_t xHandleCurtainStepperReverse = NULL;
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
-inline void vInitTaskOpenCurtains() {
-	xTaskCreate(vTaskOpenCurtains, "curtainOpen", 2048, NULL, 25, &xHandleOpenCurtains);
+void vInitTaskRTOSDebug( void ) {
+	// Init the task, passing in the callback, a name, stack size, callback params, priority and finally-- the handler itself.
+	xTaskCreate(vTaskRTOSDebug, "RTOSDebug", 2048, NULL, 1, &xHandleRTOSDebug);
+	// assert the task to ensure it was created succesfully. it will be thrown in console otherwise.
+	configASSERT(xHandleRTOSDebug);
+}
+
+void vInitTaskLEDFade( void )
+{
+	// Init the task, passing in the callback, a name, stack size, callback params, priority and finally-- the handler itself.
+	xTaskCreate( vTaskLEDFade, "LEDFade", 2048, NULL, 1, &xHandleLEDFade);
+	// assert the task to ensure it was created succesfully. it will be thrown in console otherwise.
+	configASSERT(xHandleLEDFade);
+}
+
+void vInitTaskCurtainMotor() {
+	xTaskCreate(vTaskRotateStepperForward, "curtainStepperForward", 2048, NULL, 2, &xHandleCurtainStepperForward);
+	xTaskCreate(vTaskRotateStepperReverse, "curtainStepperReverse", 2048, NULL, 2, &xHandleCurtainStepperReverse);
+	xTaskCreate(vTaskOpenCurtains, "curtainOpen", 2048, NULL, 2, &xHandleOpenCurtains);
 	configASSERT(xHandleOpenCurtains);
-}
-
-inline void vInitTaskCloseCurtains() {
-	xTaskCreate(vTaskCloseCurtains, "curtainClose", 2048, NULL, 25, &xHandleCloseCurtains);
+	xTaskCreate(vTaskCloseCurtains, "curtainClose", 2048, NULL, 2, &xHandleCloseCurtains);
 	configASSERT(xHandleCloseCurtains);
+	configASSERT(xHandleCurtainStepperForward);
+	configASSERT(xHandleCurtainStepperReverse);
 }
 
-inline void vTaskOpenCurtains(void * pvPerameters) {
+void vTaskOpenCurtains(void * pvPerameters) {
 
 	while(1) {
 		// Block and wait for message to unlock
@@ -42,7 +58,7 @@ inline void vTaskOpenCurtains(void * pvPerameters) {
 
 		// Rotate the stepper motor forward.
 		// We use an interval of 360 degrees so that it has time to run until the ISR checks button state again.
-		move(stepperMotor_1, calcStepsForRotation(stepperMotor_1, 360));
+		move(StepperMotor_1, calcStepsForRotation(StepperMotor_1, 360));
 
 		// Reset the wdt from this running task
 		esp_task_wdt_reset();
@@ -55,7 +71,7 @@ inline void vTaskOpenCurtains(void * pvPerameters) {
 
 }
 
-inline void vTaskCloseCurtains( void * pvPerameters) {
+void vTaskCloseCurtains( void * pvPerameters) {
 	float distance = HEIGHT_INCHES * 25.4;	// 25.4mm per inch.
 	// printf("distance (inches): %f\n", distance);
 	float circumference = 2 * M_PI * (DIAMETER_MM/2);	// find the circumference (2 * pi * r)
@@ -74,7 +90,7 @@ inline void vTaskCloseCurtains( void * pvPerameters) {
 		// Schedule task to wdt, so we can reset timeout periodically.
 		esp_task_wdt_add(xHandleCloseCurtains);
 
-		move(stepperMotor_1, calcStepsForRotation(stepperMotor_1, 360));
+		move(StepperMotor_1, calcStepsForRotation(StepperMotor_1, 360));
 		completed++;
 
 		if (completed < revolutionsToTarget) {
@@ -102,7 +118,7 @@ inline void vTaskCloseCurtains( void * pvPerameters) {
 
 }
 
-inline void vTaskRotateStepperForward(void * pvPerameters) {
+void vTaskRotateStepperForward(void * pvPerameters) {
 
 	while(1) {
 		// Block and wait for message to unlock
@@ -112,7 +128,7 @@ inline void vTaskRotateStepperForward(void * pvPerameters) {
 
 		// Rotate the stepper motor forward.
 		// We use an interval of 360 degrees so that it has time to run until the ISR checks button state again.
-		move(stepperMotor_1, calcStepsForRotation(stepperMotor_1, 360));
+		move(StepperMotor_1, calcStepsForRotation(StepperMotor_1, 360));
 
 		// Reset the wdt from this running task
 		esp_task_wdt_reset();
@@ -124,7 +140,7 @@ inline void vTaskRotateStepperForward(void * pvPerameters) {
 
 }
 
-inline void vTaskRotateStepperReverse(void * pvPerameters) {
+void vTaskRotateStepperReverse(void * pvPerameters) {
 
 	while(1) {
 		// Block and wait for message to unlock
@@ -134,7 +150,7 @@ inline void vTaskRotateStepperReverse(void * pvPerameters) {
 
 		// Rotate the stepper motor reverse.
 		// We use an interval of 360 degrees so that it has time to run until the ISR checks button state again.
-		move(stepperMotor_1, -(calcStepsForRotation(stepperMotor_1, 360)));
+		move(StepperMotor_1, -(calcStepsForRotation(StepperMotor_1, 360)));
 
 		// Reset the wdt from this running task
 		esp_task_wdt_reset();
@@ -146,14 +162,9 @@ inline void vTaskRotateStepperReverse(void * pvPerameters) {
 
 }
 
-inline void vInitTaskCurtainStepper() {
-	xTaskCreate(vTaskRotateStepperForward, "curtainStepperForward", 2048, NULL, 2, &xHandleCurtainStepperForward);
-	xTaskCreate(vTaskRotateStepperReverse, "curtainStepperReverse", 2048, NULL, 2, &xHandleCurtainStepperReverse);
-	configASSERT(xHandleCurtainStepperForward);
-	configASSERT(xHandleCurtainStepperReverse);
-}
 
-inline void vTaskLEDFade( void * pvParameters)
+
+void vTaskLEDFade( void * pvParameters)
 {
 	int64_t ticsElapsed = 0;
 	const unsigned fadeTime = 3000000; // fade time in microseconds
@@ -237,42 +248,7 @@ inline void vTaskLEDFade( void * pvParameters)
 
 }
 
-inline void vInitTaskLEDFade( void )
-{
-	// Init the task, passing in the callback, a name, stack size, callback params, priority and finally-- the handler itself.
-	xTaskCreate( vTaskLEDFade, "LEDFade", 2048, NULL, 1, &xHandleLEDFade);
-	// assert the task to ensure it was created succesfully. it will be thrown in console otherwise.
-	configASSERT(xHandleLEDFade);
-}
-
-// inline void vTaskLEDFade( void * args) {
-
-// 	if (LEDC_CHANNEL_0_DUTY > 0) {
-// 		LEDC_CHANNEL_0_DUTY--;
-// 	}
-	
-// 	ledc_set_duty_with_hpoint(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, LEDC_CHANNEL_0_DUTY, 0);
-// }
-
-// inline void vInitTimerLEDFade( int ms ) {
-// 	int period_ms = APB_CLK_FREQ/1000;
-// 	int target_period_us = ms * period_ms;
-// 	int alarm_value = target_period_us/LEDC_CHANNEL_0_DUTY_MAX;
-
-// 	printf("alarm_value %i\n", alarm_value);
-
-// 	xHandleTimerLED = xTimerCreate("LED Timer", pdMS_TO_TICKS(1), true, xHandleTimerLED, vTaskLEDFade);
-// 	xTimerStart(xHandleTimerLED, 0 );
-// }
-
-inline void vInitTaskRTOSDebug( void ) {
-	// Init the task, passing in the callback, a name, stack size, callback params, priority and finally-- the handler itself.
-	xTaskCreate(vTaskRTOSDebug, "RTOSDebug", 2048, NULL, 1, &xHandleRTOSDebug);
-	// assert the task to ensure it was created succesfully. it will be thrown in console otherwise.
-	configASSERT(xHandleRTOSDebug);
-}
-
-inline void vTaskRTOSDebug( void * pvParameters){
+void vTaskRTOSDebug( void * pvParameters){
 
 	while(1) {
 

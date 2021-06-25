@@ -3,7 +3,7 @@
 timer_config_t config_timer_0;
 timer_config_t config_timer_1;
 
-inline void vSetLEDFadePeriod(int ms) {
+void vSetLEDFadePeriod(int ms) {
 
 	int timer_0_frequency = APB_CLK_FREQ/config_timer_0.divider;
 	int period_ms = timer_0_frequency/1000;
@@ -18,7 +18,7 @@ inline void vSetLEDFadePeriod(int ms) {
 	timer_start(TIMER_GROUP_0, TIMER_0);
 }
 
-inline void vInitTimer_0() {
+void vInitTimerConfig_0() {
 	// Note: do not use C designated initializers as they are not friendly with C++ syntax.
 	config_timer_0.clk_src = TIMER_SRC_CLK_APB;
 	config_timer_0.divider = 2;					 // 40hz
@@ -39,7 +39,7 @@ inline void vInitTimer_0() {
 	timer_start(TIMER_GROUP_0, TIMER_0);
 } 
 
-inline void vInitTimer_1() {
+void vInitTimerConfig_1() {
 	// Note: do not use C designated initializers as they are not friendly with C++ syntax.
 	timer_config_t config_timer_1;
 	config_timer_1.clk_src = TIMER_SRC_CLK_APB;
