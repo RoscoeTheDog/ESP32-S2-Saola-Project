@@ -1,6 +1,6 @@
 #include <configGpio.h>
 
-inline void vInitGPIO(){ 
+void vInitGpioConfig(){ 
 	// Configure all GPIO here.
 	// Note: avoid designated initializers since they do not play friendly with C++ syntax & compiler
 	gpio_config_t STEP_CONF;
@@ -25,14 +25,14 @@ inline void vInitGPIO(){
 	EN_CONF.intr_type = GPIO_INTR_DISABLE;
 
 	gpio_config_t BTN_0_CONF;
-	BTN_0_CONF.pin_bit_mask = BTN_0_PIN_SEL;
+	BTN_0_CONF.pin_bit_mask = BTN_0_INPUT_PIN_SEL;
 	BTN_0_CONF.mode = GPIO_MODE_INPUT;
 	BTN_0_CONF.pull_up_en = GPIO_PULLUP_DISABLE;
 	BTN_0_CONF.pull_down_en = GPIO_PULLDOWN_ENABLE;
 	BTN_0_CONF.intr_type = GPIO_INTR_DISABLE;
 	
 	gpio_config_t BTN_0_LED_CONF;
-	BTN_0_LED_CONF.pin_bit_mask = BTN_0_LED_PIN_SEL;
+	BTN_0_LED_CONF.pin_bit_mask = BTN_0_LED_OUT_PIN_SEL;
 	BTN_0_LED_CONF.mode = GPIO_MODE_OUTPUT;
 #ifdef BTN_0_LED_DRIVER_P
 	BTN_0_LED_CONF.pull_up_en = GPIO_PULLUP_ENABLE;
@@ -46,10 +46,10 @@ inline void vInitGPIO(){
 
 	// TODO: Solve how to do a boolean GPIO Interrupt without cuasing kernal panic loop
 	// gpio_install_isr_service(ESP_INTR_FLAG_EDGE);
-	// gpio_isr_handler_add(BTN_0_PIN, xISR_button_0, 0);
+	// gpio_isr_handler_add(BTN_0_INPUT_PIN, xISR_button_0, 0);
 
 	gpio_config_t BTN_1_CONF;
-	BTN_1_CONF.pin_bit_mask = BTN_1_PIN_SEL;
+	BTN_1_CONF.pin_bit_mask = BTN_1_INPUT_PIN_SEL;
 	BTN_1_CONF.mode = GPIO_MODE_INPUT;
 	BTN_1_CONF.pull_up_en = GPIO_PULLUP_DISABLE;
 	BTN_1_CONF.pull_down_en = GPIO_PULLDOWN_ENABLE;

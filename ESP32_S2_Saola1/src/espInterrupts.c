@@ -12,8 +12,8 @@ volatile bool BTN_1_PIN_STATE;
 
 void updateButtonsState() {
 	// do this once every interrupt, as to avoid checking the pin logic multiple times.
-	BTN_0_PIN_STATE = gpio_get_level(BTN_0_PIN);
-	BTN_1_PIN_STATE = gpio_get_level(BTN_1_PIN);
+	BTN_0_PIN_STATE = gpio_get_level(BTN_0_INPUT_PIN);
+	BTN_1_PIN_STATE = gpio_get_level(BTN_1_INPUT_PIN);
 }
 
 // All interrupts must be declared as a boolean to signify if they yield or not.
@@ -50,7 +50,7 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 		// Check if any prioritized tasks are running.
 		if (eTaskGetState(xHandleCloseCurtains) != eRunning) {
 			// Immediate stop stepper from running tasks.
-			stop(stepperMotor_1);	
+			stop(StepperMotor_1);	
 		}
 
 		// See if LED is on/off

@@ -7,9 +7,9 @@
 extern timer_config_t config_timer_0;
 extern timer_config_t config_timer_1;
 
-extern void vInitTimer_0();
+extern void vInitTimerConfig_0();
 
-extern void vInitTimer_1();
+extern void vInitTimerConfig_1();
 
 extern void fadeUpdate();
 

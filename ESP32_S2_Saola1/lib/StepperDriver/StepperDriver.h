@@ -1,9 +1,19 @@
 #ifndef STEPPERDRIVER_H
 #define STEPPERDRIVER_H
 
+// include freeRTOS methods if end-user has the framework defined somewhere in the application.
+// This is mainly to perform thread-safe dynamic memory allocation, while allowing freeRTOS to be voided if not used.
+#ifdef INC_FREERTOS_H
+#include <freertos/FreeRTOS.h>
+#endif
+
 #include <esp_timer.h>
 #include <driver/gpio.h>
 #include <math.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define STEP_PULSE(steps, microsteps, rpm) (60.0*1000000L/steps/microsteps/rpm)
 #define HIGH 1
@@ -36,70 +46,75 @@ typedef struct StepperConfig_t {
 } StepperConfig_t;
 
 typedef struct StepperHandle_t {
-    StepperConfig_t *configuration;
-	StepperMotorState_t motor_state;
-    short direction_state; // dir pin state.
-    long rest;
-    long last_action_end;
-    long next_action_interval;
-    long step_count;
-    long steps_remaining;
-    long steps_to_cruise;
-    long steps_to_brake;
-    long step_pulse;
-    long cruise_step_pulse;
-	int step_high_min;
-	int step_low_min;
-	int wakeup_time;
+    StepperConfig_t *Config;
+	StepperMotorState_t MotorState;
+    short dir_state;
+    unsigned rest;
+    unsigned pulse_end_time;
+    unsigned pulse_next_time;
+    unsigned step_count;
+    long long steps_remaining;  // 64 wide for very long travel moves and compatability with esp_get_time().
+    unsigned steps_to_cruise;
+    unsigned steps_to_brake;
+    unsigned step_pulse;
+    unsigned cruise_step_pulse;
+	short step_high_min;
+	short step_low_min;
+	short wakeup_time;
 } StepperHandle_t;
 
+extern StepperHandle_t* createStepperHandle(StepperConfig_t *Config);
 
-extern StepperHandle_t* createStepperHandler(StepperConfig_t *configuration);
+extern void destroyStepperHandle(StepperHandle_t **StepperHandle);
 
-extern long getStepPulse(long steps, short microsteps, short rpm);
+extern unsigned getStepPulse(long long steps, short microsteps, short rpm);
 
-extern void startMove(StepperHandle_t *stepper_handler, long steps, long time);
+extern void startMove(StepperHandle_t *StepperHandle, long long steps, unsigned time);
 
-extern void delayMicros(unsigned long delay_us, unsigned long start_us);
+extern void delayMicros(unsigned delay_us, long long start_us);
 
-extern void calcStepPulse(StepperHandle_t *stepper_handler);
+extern void calcStepPulse(StepperHandle_t *StepperHandle);
 
 extern StepperMotorState_t getMotorState(StepperHandle_t *Stepperhandler);
 
-extern void setEnableActiveState(StepperHandle_t *stepper_handler, bool state);
+extern void setEnableActiveState(StepperHandle_t *StepperHandle, bool state);
 
-extern void disableStepper(StepperHandle_t *stepper_handler);
+extern void disableStepper(StepperHandle_t *StepperHandle);
 
-extern void enableStepper(StepperHandle_t *stepper_handler);
+extern void enableStepper(StepperHandle_t *StepperHandle);
 
-extern unsigned getStepperDirection(StepperHandle_t *stepper_handler);
+extern unsigned getStepperDirection(StepperHandle_t *StepperHandle);
 
-extern void setStepperDirection(StepperHandle_t *stepper_handler, unsigned direction);
+extern void setStepperDirection(StepperHandle_t *StepperHandle, short direction);
 
-extern float getStepperRPM(StepperHandle_t *stepper_handler);
+extern float getStepperRPM(StepperHandle_t *StepperHandle);
 
-extern void setStepperRPM(StepperHandle_t *stepper_handler, short rpm);
+extern void setStepperRPM(StepperHandle_t *StepperHandle, short rpm);
 
-extern void setMicrosteps(StepperHandle_t *stepper_handler, short microsteps);
+extern void setMicrosteps(StepperHandle_t *StepperHandle, short microsteps);
 
-extern unsigned getMicrosteps(StepperHandle_t *stepper_handler);
+extern unsigned getMicrosteps(StepperHandle_t *StepperHandle);
 
-extern void move(StepperHandle_t *stepper_handler, long steps);
+extern void move(StepperHandle_t *StepperHandle, long long steps);
 
-extern void rotate(StepperHandle_t *stepper_handler, short deg);
+extern void rotate(StepperHandle_t *StepperHandle, short deg);
 
-extern long nextAction(StepperHandle_t *stepper_handler);
+extern unsigned nextAction(StepperHandle_t *StepperHandle);
 
-extern void startMove(StepperHandle_t *stepper_handler, long steps, long time);
+extern void startMove(StepperHandle_t *StepperHandle, long long steps, unsigned time);
 
-extern void startRotate(StepperHandle_t *stepper_handler, short deg);
+extern void startRotate(StepperHandle_t *StepperHandle, short deg);
 
-extern void startBrake(StepperHandle_t *stepper_handler);
+extern void startBrake(StepperHandle_t *StepperHandle);
 
-extern long stop(StepperHandle_t *stepper_handler);
+extern long long stop(StepperHandle_t *StepperHandle);
 
-extern long getTimeForMove(StepperHandle_t *stepper_handler, long steps);
+extern unsigned getTimeForMove(StepperHandle_t *StepperHandle, long long steps);
 
-extern long calcStepsForRotation(StepperHandle_t *stepper_motor, short deg);
+extern long long calcStepsForRotation(StepperHandle_t *StepperHandle, short deg);
 
+#endif
+
+#ifdef __cplusplus
+}
 #endif

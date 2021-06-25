@@ -1,12 +1,12 @@
 /*
 	Include C++ headers here.
 
-	If you want to use C++ libraries, they must be included in this CPP OR explicitely wrapped as extern "C++" {} so the compiler knows what conventions to use
-	and how to link them.
+	If you use C++ libraries, they should be included in this CPP scope OR explicitely wrapped as extern "C++" {} so the compiler knows what conventions to use
+	and how to link them together.
 */
 
 /*
-	Tell the compiler to wrap main as C convention since most of the IDF framework in standard C.
+	Tell the compiler to wrap main for C convention since most of the IDF framework in standard C but we may want to use C++ occasionally.
 */
 
 extern "C" {
@@ -19,50 +19,42 @@ extern "C" {
 	#include <configTimers.h>
 	#include <configSteppers.h>
 	#include <esp_timer.h>
+	#include <freeRTOS/FreeRTOS.h>
 
     void app_main(void);
 }
 
 void app_main(void) {
-	// Call all initializers first.
 
-	// NOTE: For debugging the stepper driver issue, disable all other microcontroller features/tasks
-	//		 except for what is required (like initializing output pins).
+	// initialize peripherials and resources here.
+	vInitGpioConfig();					// GPIO pin configuration
+	vInitLedcConfig_0();				// LED PWM generator
+	vInitTimerConfig_0();				// Button interrupts
+	vInitCurtainMotorConfig_0();
 
-	// vInitTaskRTOSDebug();
-	vInitGPIO();
-	// vInitLEDC_0();
-	// vInitTaskLEDFade();
-	// vInitCurtainStepper();
-	// vInitTaskCurtainStepper();
-	// vInitTaskCloseCurtains();
-	// vInitTimer_0();	// starts button interrupts.
+	// initialize RTOS tasks here
+	vInitTaskLEDFade();					// Task to fade the LED buttons
+	vInitTaskCurtainMotor();			// Multiple Tasks to control the stepper motor
+
+
+
+
+
+
+
+
+
 	// xTaskNotify(xHandleCloseCurtains, 1, eSetValueWithOverwrite);
 
-	// Allocated and create a pointer to a stepper config struct.
-	StepperConfig_t *sc = (StepperConfig_t*)pvPortMalloc(sizeof(StepperConfig_t));
-	// set the used pins and the settings for the motor.
-	sc->step_pin = STEP_PIN;
-	sc->direction_pin = DIR_PIN;
-	sc->enable_pin = EN_PIN;
-	sc->enable_active_state = 1;
-	sc->motor_steps = 200;
-	sc->rpm = 200;
-	sc->microstepping = 64;
-	sc->mode = CONSTANT_SPEED;
+	// // rotate the motor 360 degrees then wait for 3 seconds.
+	// while (1) {
+	// 	rotate(StepperMotor_1, 360);
+	// 	vTaskDelay(pdMS_TO_TICKS(3 * 1000));
+	// }
 
-	// pass the configuration to the create handle method. returns a pointer to a handle type.
-	StepperHandle_t *stepper = createStepperHandler(sc);
-
-	// rotate the motor 360 degrees then wait for 3 seconds.
-	while (1) {
-		rotate(stepper, 360);
-		vTaskDelay(pdMS_TO_TICKS(3 * 1000));
-		// ignore this. the below task can print Task information such as stack size etc but revealed anything useful.
-		// xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
-		printf("heap_caps_get_free_size: %u\n", heap_caps_get_free_size(MALLOC_CAP_8BIT));
-		printf("xPortGetFreeHeapSize: %u\n\n", xPortGetFreeHeapSize());
-	}
+	// xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
+	// printf("heap_caps_get_free_size: %u\n", heap_caps_get_free_size(MALLOC_CAP_8BIT));
+	// printf("xPortGetFreeHeapSize: %u\n\n", xPortGetFreeHeapSize());
 
 }
 

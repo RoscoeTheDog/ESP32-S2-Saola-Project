@@ -13,7 +13,7 @@ extern volatile int LEDC_CHANNEL_0_DUTY;
 
 extern int xGetDutyResolutionMax();
 
-extern void vInitLEDC_0( void );
+extern void vInitLedcConfig_0( void );
 
 extern bool getLEDState();
 

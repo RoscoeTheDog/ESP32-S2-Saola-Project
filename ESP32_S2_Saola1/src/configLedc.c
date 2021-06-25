@@ -6,7 +6,7 @@ inline int xGetDutyResolutionMax() {
 	return (pow(2, LEDC_CHANNEL_0_DUTY_BITS) - 1);
 }
 
-inline void vInitLEDC_0( void ) {
+void vInitLedcConfig_0( void ) {
 	// config ledc peripherials and channels here.
 	// Note: when needing to reference a channel, use the appropriate C macros instead of the direct objects.
 	ledc_timer_config_t ledc_timer_conf_0;
@@ -17,7 +17,7 @@ inline void vInitLEDC_0( void ) {
 	ledc_timer_conf_0.duty_resolution = LEDC_CHANNEL_0_DUTY_BITS;
 
 	ledc_channel_config_t ledc_channel_conf_0;
-	ledc_channel_conf_0.gpio_num = BTN_0_LED_PIN;
+	ledc_channel_conf_0.gpio_num = BTN_0_LED_OUT_PIN;
 	ledc_channel_conf_0.speed_mode = LEDC_LOW_SPEED_MODE;
 	ledc_channel_conf_0.timer_sel = LEDC_TIMER_0;
 	ledc_channel_conf_0.duty = LEDC_CHANNEL_0_DUTY;
