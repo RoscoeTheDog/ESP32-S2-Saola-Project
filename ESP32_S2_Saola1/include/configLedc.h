@@ -2,8 +2,8 @@
 #define CONFIG_LEDC_H
 
 #include <driver/ledc.h>
-#include "configGpio.h"
 #include <math.h>
+#include <configGpio.h>
 
 #define LEDC_TIMER_0_FREQUENCY 100
 #define LEDC_CHANNEL_0_DUTY_BITS LEDC_TIMER_11_BIT

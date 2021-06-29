@@ -1,12 +1,16 @@
 #ifndef RTOSTASKS_HPP
 #define RTOSTASKS_HPP
 
-#include <sdkconfig.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
+#include <freertos/timers.h>
 #include <freertos/queue.h>
 #include <configLedc.h>
-#include <freertos/timers.h>
+#include <settings.h>
+#include <StepperDriver.h>
+#include <esp_task_wdt.h>
+#include <esp_int_wdt.h>
+#include <configSteppers.h>
 
 // Reconfigure default settings for this project via header. More reliable if framework gets reset to defaults somehow.
 // #ifdef CONFIG_FREERTOS_HZ

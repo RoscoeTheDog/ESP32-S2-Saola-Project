@@ -87,6 +87,12 @@
 		"stepperdriver.h": "c",
 		"math.h": "c",
 		"esp_timer.h": "c",
-		"configsteppers.h": "c"
+		"configsteppers.h": "c",
+		"sdkconfig.h": "c",
+		"ledc.h": "c",
+		"settings.h": "c",
+		"timers.h": "c",
+		"configwifi.h": "c",
+		"esp_smartconfig.h": "c"
 	}
 }
