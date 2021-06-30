@@ -2,8 +2,6 @@
 #define CONFIG_GPIO_H
 
 #include <driver/gpio.h>
-#include "driverTypes.h"
-#include "espInterrupts.h"
 
 #define STEP_PIN GPIO_NUM_33
 #define STEP_PIN_SEL GPIO_SEL_33

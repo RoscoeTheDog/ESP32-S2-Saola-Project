@@ -113,8 +113,8 @@ extern unsigned getTimeForMove(StepperHandle_t *StepperHandle, long long steps);
 
 extern long long calcStepsForRotation(StepperHandle_t *StepperHandle, short deg);
 
-#endif
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // STEPPERDRIVER_H

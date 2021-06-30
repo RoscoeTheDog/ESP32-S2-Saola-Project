@@ -1,14 +1,9 @@
 #include <rtosTasks.h>
-#include <esp_int_wdt.h>
-#include <esp_task_wdt.h>
-#include <StepperDriver.h>
-#include <configSteppers.h>
-#include <math.h>
-#include <config.h>
+
 /*
 	Define all of your callback functions here.
 
-	Note: no function should ever return anything. Make use of blocks or simply uninstall the task when you want it to stop.
+	Note: no function should ever return anything. Make use of blocking tasks or simply uninstall the task after your done.
 */ 
 
 TaskHandle_t xHandleRTOSDebug = NULL;
@@ -19,6 +14,8 @@ TaskHandle_t xHandleCloseCurtains = NULL;
 TaskHandle_t xHandleCurtainStepperForward = NULL;
 TaskHandle_t xHandleCurtainStepperReverse = NULL;
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+
+
 
 void vInitTaskRTOSDebug( void ) {
 	// Init the task, passing in the callback, a name, stack size, callback params, priority and finally-- the handler itself.

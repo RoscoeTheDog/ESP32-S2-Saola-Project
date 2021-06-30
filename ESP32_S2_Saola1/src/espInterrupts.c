@@ -1,10 +1,10 @@
 #include <espInterrupts.h>
-#include <configGpio.h>
-#include <StepperDriver.h>
-#include <configSteppers.h>
-#include <rtosTasks.h>
-#include <freertos/task.h>
-#include <freertos/FreeRTOS.h>
+// #include <configGpio.h>
+// #include <StepperDriver.h>
+// #include <configSteppers.h>
+// #include <rtosTasks.h>
+// #include <freertos/task.h>
+// #include <freertos/FreeRTOS.h>
 
 BaseType_t xHigherPriorityTaskWoken = pdTRUE;
 volatile bool BTN_0_PIN_STATE;
