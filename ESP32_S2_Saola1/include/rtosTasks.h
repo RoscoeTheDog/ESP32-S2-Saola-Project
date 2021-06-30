@@ -11,6 +11,8 @@
 #include <esp_task_wdt.h>
 #include <esp_int_wdt.h>
 #include <configSteppers.h>
+#include <esp_wifi.h>
+#include <freertos/event_groups.h>
 
 // Reconfigure default settings for this project via header. More reliable if framework gets reset to defaults somehow.
 // #ifdef CONFIG_FREERTOS_HZ
@@ -27,6 +29,12 @@ extern TaskHandle_t xHandleCurtainStepperForward;
 extern TaskHandle_t xHandleCurtainStepperReverse;
 extern TaskHandle_t xHandleOpenCurtains;
 extern TaskHandle_t xHandleCloseCurtains;
+
+/* FreeRTOS event group to signal when we are connected & ready to make a request */
+extern EventGroupHandle_t s_wifi_event_group;
+
+extern void event_handler(void* arg, esp_event_base_t event_base,
+                                int32_t event_id, void* event_data);
 
 extern void vInitTaskOpenCurtains();
 

@@ -15,6 +15,8 @@ TaskHandle_t xHandleCurtainStepperForward = NULL;
 TaskHandle_t xHandleCurtainStepperReverse = NULL;
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
+
+
 void vInitTaskRTOSDebug( void ) {
 	// Init the task, passing in the callback, a name, stack size, callback params, priority and finally-- the handler itself.
 	xTaskCreate(vTaskRTOSDebug, "RTOSDebug", 2048, NULL, 1, &xHandleRTOSDebug);
