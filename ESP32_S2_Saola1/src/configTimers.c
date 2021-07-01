@@ -34,7 +34,7 @@ void vInitTimerConfig_0() {
 	// example: if set at 5khz speed, then 5,000hz/5 tics = 1,000 us/period or 0.001 second (1ms)
 	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000 * 120);
 	// Attach a callback (isr)
-	timer_isr_callback_add(TIMER_GROUP_0, TIMER_0, xISR_button_0, NULL, ESP_INTR_FLAG_IRAM);
+	timer_isr_callback_add(TIMER_GROUP_0, TIMER_0, xISR_button_0, NULL, ESP_INTR_FLAG_SHARED);
 
 	timer_start(TIMER_GROUP_0, TIMER_0);
 } 

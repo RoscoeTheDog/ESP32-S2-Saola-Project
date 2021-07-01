@@ -11,14 +11,17 @@ static const char *TAG = "smartconfig_example";
 EventGroupHandle_t s_wifi_event_group;
 
 void wifiConfigNVSConnect() {
-
-    wifi_config_t *wifi_config;
+    wifi_config_t *wifi_config = NULL;
     wifi_config = nvsReadBlob("wifi_settings", "wifi_config_t", sizeof(wifi_config_t)); // returns NULL if failed.
 
     // validate whether we successfully read the blob data.
-    if (wifi_config) {
-        ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config));
-        esp_wifi_connect();
+    if (wifi_config != NULL) {
+        printf("saved wifi config found!\n");
+        printf("SSID: %s\nPASSWORD: %s\n", wifi_config->sta.ssid, wifi_config->sta.password);
+        esp_err_t err = esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config);
+        if (err == ESP_OK) {
+            ESP_ERROR_CHECK(esp_wifi_connect());
+        }
     }
 }
 
@@ -26,13 +29,17 @@ void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        xTaskCreate(smartconfig_task, "smartconfig_example_task", 4096, NULL, 3, NULL);
+        wifiConfigNVSConnect();
+        xTaskCreate(smartconfig_task, "smartconfig_example_task", 4096, NULL, 1, NULL);
     } else if (event_id == WIFI_EVENT_STA_CONNECTED) {
         printf("station connected!\n");
+        vTaskDelay(pdMS_TO_TICKS(5000));
+        esp_wifi_disconnect();
     } else if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
         printf("station disconnected!\n");
         xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
         wifiConfigNVSConnect();
+        xTaskCreate(smartconfig_task, "smartconfig_example_task", 4096, NULL, 1, NULL);
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
     } else if (event_base == SC_EVENT && event_id == SC_EVENT_SCAN_DONE) {
@@ -61,22 +68,23 @@ void event_handler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "PASSWORD:%s", password);
 
         // update the current active configuration
-        ESP_ERROR_CHECK( esp_wifi_set_config(WIFI_IF_STA, &wifi_config) );
+        esp_err_t err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
         // attempt to connect to the AP
-        esp_err_t err = esp_wifi_connect();
+        err = esp_wifi_connect();
         // if connected to the AP OK, then write the new config to the NVS
         // Otherwise, report the error.
         if (err == ESP_OK) {
             // write to the nvs the wifi configuration
-            nvsWriteBlob("wifi_settings", "wifi_config_t", &wifi_config, sizeof(wifi_config));
+            nvsWriteBlob("wifi_settings", "wifi_config_t", &wifi_config, sizeof(wifi_config_t));
         } else {
-            ESP_ERROR_CHECK(err);
+            printf("Could not connect using smartConfig. Error code (%i)\n", err);
         }
+        
     } else if (event_base == SC_EVENT && event_id == SC_EVENT_SEND_ACK_DONE) {
         xEventGroupSetBits(s_wifi_event_group, ESPTOUCH_DONE_BIT);
     }
 }
-
+    
 void smartconfig_task(void * parm)
 {
     EventBits_t uxBits;
@@ -100,9 +108,31 @@ void smartconfig_task(void * parm)
 void initialize_wifi(void) {
     ESP_ERROR_CHECK(esp_netif_init());
     s_wifi_event_group = xEventGroupCreate();
+
+    // esp_event_loop_args_t loop_args = {
+    //     .queue_size = 20,
+    //     .task_name = "wifi_event_loop",
+    //     .task_priority = 1,
+    //     .task_stack_size = 4096,
+    //     .task_core_id = 0,
+    // };
+    // esp_event_loop_handle_t event_loop;
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    // ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    // ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
     assert(sta_netif);
+
+    // initialize the NVS flash
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        // NVS partition was truncated and needs to be erased
+        // Retry nvs_flash_init
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
@@ -114,9 +144,9 @@ void initialize_wifi(void) {
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_start() );
 
-    // if successful or fail, an event will be raised in the event_handler callback.
-    // if fails, it will automatically attempt to find the last known config in the NVS and try again.
-    esp_wifi_connect();
+    // // if successful or fail, an event will be raised in the event_handler callback.
+    // // if fails, it will automatically attempt to find the last known config in the NVS and try again.
+    // esp_wifi_connect();
 
 }
 
@@ -143,7 +173,6 @@ void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id
             wifi_config_t wifi_config;
             uint8_t ssid[33] = { 0 };
             uint8_t password[65] = { 0 };
-            uint8_t rvd_data[33] = { 0 };
 
             bzero(&wifi_config, sizeof(wifi_config_t));
             memcpy(wifi_config.sta.ssid, evt->ssid, sizeof(wifi_config.sta.ssid));
@@ -162,13 +191,10 @@ void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id
             esp_wifi_connect();
 
             nvs_handle_t storage_handle;
-            esp_err_t err = nvs_open("wifi_settings", NVS_READWRITE, &storage_handle);
-            nvs_set_blob(storage_handle, "wifi_config_t", &wifi_config, sizeof(wifi_config));
-            err = nvs_commit(storage_handle);
+            ESP_ERROR_CHECK(nvs_open("wifi_settings", NVS_READWRITE, &storage_handle));
+            ESP_ERROR_CHECK(nvs_set_blob(storage_handle, "wifi_config_t", &wifi_config, sizeof(wifi_config)));
+            ESP_ERROR_CHECK(nvs_commit(storage_handle));
             nvs_close(storage_handle);
-
-            vTaskDelay(pdMS_TO_TICKS(5000));
-            ESP_ERROR_CHECK(esp_wifi_disconnect());
 
         } else if (event_base == SC_EVENT && event_id == SC_EVENT_SEND_ACK_DONE) {
             xEventGroupSetBits(s_wifi_event_group, ESPTOUCH_DONE_BIT);

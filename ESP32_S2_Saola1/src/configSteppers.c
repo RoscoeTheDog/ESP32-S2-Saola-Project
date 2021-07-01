@@ -11,7 +11,7 @@ void vInitCurtainMotorConfig_0() {
 	StepperConfig_1->enable_pin = EN_PIN;
 	StepperConfig_1->enable_active_state = 1;
 	StepperConfig_1->motor_steps = 200;
-	StepperConfig_1->rpm = 200;
+	StepperConfig_1->rpm = 450;
 	StepperConfig_1->microstepping = 64;
 	StepperConfig_1->mode = CONSTANT_SPEED;
 
