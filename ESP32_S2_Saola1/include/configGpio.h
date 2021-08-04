@@ -3,6 +3,14 @@
 
 #include <driver/gpio.h>
 
+#define RGB_PIN_RED GPIO_NUM_34
+#define RGB_PIN_RED_SEL GPIO_SEL_34
+#define RGB_PIN_GREEN GPIO_NUM_35
+#define RGB_PIN_GREEN_SEL GPIO_SEL_35
+#define RGB_PIN_BLUE GPIO_NUM_36
+#define RGB_PIN_BLUE_SEL GPIO_SEL_36
+
+
 #define STEP_PIN GPIO_NUM_33
 #define STEP_PIN_SEL GPIO_SEL_33
 

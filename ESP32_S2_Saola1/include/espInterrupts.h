@@ -8,6 +8,7 @@
 #include <configGpio.h>
 #include <StepperDriver.h>
 #include <configSteppers.h>
+#include <httpRequests.h>
 
 /*
 	If you called FreeRTOS functions in callback, you need to return true or false based on the retrun value of argument pxHigherPriorityTaskWoken. 

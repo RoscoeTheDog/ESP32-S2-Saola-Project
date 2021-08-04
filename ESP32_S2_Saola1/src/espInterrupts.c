@@ -47,11 +47,12 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 	// When both buttons are released...
 	if (!BTN_0_PIN_STATE && !BTN_1_PIN_STATE) {
 
-		// Check if any prioritized tasks are running.
-		if (eTaskGetState(xHandleCloseCurtains) != eRunning) {
-			// Immediate stop stepper from running tasks.
-			stop(StepperMotor_1);	
-		}
+		// // Check if any prioritized tasks are running.
+		// if (eTaskGetState(xHandleCloseCurtains) != eRunning && eTaskGetState(xHandlePollWebServer) != eRunning) {
+		// 	// Immediate stop stepper from running tasks.
+		// 	// stop(StepperMotor_1);	
+		// 	;
+		// }
 
 		// See if LED is on/off
 		if (getLEDState()) {

@@ -8,12 +8,12 @@
 extern timer_config_t config_timer_0;
 extern timer_config_t config_timer_1;
 
-extern void vInitTimerConfig_0();
+extern void initializeTimerConfig();
 
-extern void vInitTimerConfig_1();
+extern void initializeTimerConfig_1();
 
 extern void fadeUpdate();
 
-extern void vSetLEDFadePeriod(int ms);
+extern void setLEDFadePeriod(int ms);
 
 #endif

@@ -54,6 +54,27 @@ void vInitGpioConfig(){
 	BTN_1_CONF.pull_up_en = GPIO_PULLUP_DISABLE;
 	BTN_1_CONF.pull_down_en = GPIO_PULLDOWN_ENABLE;
 	BTN_1_CONF.intr_type = GPIO_INTR_DISABLE;
+
+	gpio_config_t RGB_RED_CONF;
+	RGB_RED_CONF.pin_bit_mask = RGB_PIN_RED_SEL;
+	RGB_RED_CONF.mode = GPIO_MODE_OUTPUT;
+	RGB_RED_CONF.pull_up_en = GPIO_PULLUP_ENABLE;
+	RGB_RED_CONF.pull_down_en = GPIO_PULLDOWN_DISABLE;
+	RGB_RED_CONF.intr_type = GPIO_INTR_DISABLE;
+
+	gpio_config_t RGB_GREEN_CONF;
+	RGB_GREEN_CONF.pin_bit_mask = RGB_PIN_GREEN_SEL;
+	RGB_GREEN_CONF.mode = GPIO_MODE_OUTPUT;
+	RGB_GREEN_CONF.pull_up_en = GPIO_PULLUP_ENABLE;
+	RGB_GREEN_CONF.pull_down_en = GPIO_PULLDOWN_DISABLE;
+	RGB_GREEN_CONF.intr_type = GPIO_INTR_DISABLE;
+
+	gpio_config_t RGB_BLUE_CONF;
+	RGB_BLUE_CONF.pin_bit_mask = RGB_PIN_BLUE_SEL;
+	RGB_BLUE_CONF.mode = GPIO_MODE_OUTPUT;
+	RGB_BLUE_CONF.pull_up_en = GPIO_PULLUP_ENABLE;
+	RGB_BLUE_CONF.pull_down_en = GPIO_PULLDOWN_DISABLE;
+	RGB_BLUE_CONF.intr_type = GPIO_INTR_DISABLE;
 	
 	// Pass structs to GPIO configurator
 	gpio_config(&STEP_CONF);
@@ -62,4 +83,8 @@ void vInitGpioConfig(){
 	gpio_config(&BTN_0_CONF);
 	gpio_config(&BTN_0_LED_CONF);
 	gpio_config(&BTN_1_CONF);
+	gpio_config(&RGB_RED_CONF);
+	gpio_config(&RGB_GREEN_CONF);
+	gpio_config(&RGB_BLUE_CONF);
+
 }

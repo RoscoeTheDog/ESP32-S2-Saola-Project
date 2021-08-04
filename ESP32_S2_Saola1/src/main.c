@@ -8,6 +8,7 @@
 /*
 	Tell the compiler to wrap main for C convention since most of the IDF framework in standard C but we may want to use C++ occasionally.
 */
+#define TAG "SYSTEM"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +25,16 @@ extern "C" {
 	#include <configTimers.h>
 	#include <configSteppers.h>
 	#include <configWifi.h>
+	#include <httpRequests.h>
+	#include <esp_err.h>
+	#include <string.h>
+	#include <esp_pm.h>
+	#include <esp_sleep.h>
+	#include <esp_freertos_hooks.h>
+	#include <freertos/task.h>
+	#include <esp_sntp.h>
+	#include <sys/time.h>
+	#include <time.h>
 
     void app_main(void);
 
@@ -34,32 +45,153 @@ extern "C" {
 void app_main(void) {
 	nvs_flash_erase();
 
-	// // initialize peripherials and resources here.
-	// vInitGpioConfig();					// GPIO pin configuration
-	// vInitLedcConfig_0();				// LED PWM generator
-	// vInitTimerConfig_0();				// Button interrupts
-	// vInitCurtainMotorConfig_0();
+	// esp_pm_config_esp32s2_t cfg;
+	// esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
+	// cfg.light_sleep_enable = true;
+	// cfg.max_freq_mhz = 240;
+	// cfg.min_freq_mhz = 80;
 
-	// // initialize RTOS tasks here
-	// vInitTaskLEDFade();					// Task to fade the LED buttons
-	// vInitTaskCurtainMotor();			// Multiple Tasks to control the stepper motor
+	// ESP_ERROR_CHECK(esp_pm_configure(&cfg));
+	// vInitTaskSleep();
+	// vInitTaskRTOSDebug();
+	// initialize peripherials and resources here.
 
-	// initialize_wifi();&
+	// configure gpio for peripiherials first
+	vInitGpioConfig();					// GPIO pin configuration
+	// cold start go status red asap.
+	setStatusLEDRed();
+	// continue init...
+	initialize_ledc_config_0();				// LED PWM generator
+	vInitCurtainMotorConfig_0();		// Primary Motor Control	
+	initializeTimerConfig();				// Button interrupts
 
-	    // initialize the NVS.
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        // NVS partition was truncated and needs to be erased
-        // Retry nvs_flash_init
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK( err );
+	// pause for visual indication
+	vTaskDelay(pdMS_TO_TICKS(2000));
 
-	int a = 17;
-	nvsWriteBlob("wifi_settings", "wifi_config_t", &a, sizeof(int) );
-	int * b = nvsReadBlob("wifi_settings", "wifi_config_t", sizeof(int));
-	printf("stop");
+	// system hardware initialized sucessfully. go status yellow
+	setStatusLEDYellow();
+
+	// initialize rtos tasks
+	initializeTasks();
+
+	// pause for visual indication
+	vTaskDelay(pdMS_TO_TICKS(2000));
+
+	// status gets updated in wifi event handler
+	initialize_wifi();
+
+	// xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
+
+	// while (1) {
+
+	// 	// if (xHandleTask1 != NULL && eTaskGetState(xHandleTask1) == eSuspended) {
+	// 	// 	printf("Resuming Task\n");
+	// 	// 	vTaskResume(xHandleTask1);
+	// 	// }
+
+	// 	// if (xHandleTask1 == NULL) {
+			
+	// 		// if (eTaskGetState(xHandleTask1) == eDeleted) {
+	// 			printf("Creating Task\n");
+	// 			xTaskCreate(task_1, "task_1", 2048, NULL, 25, &xHandleTask1);
+	// 		// }
+			
+	// 	// }
+	
+	// 	// if (xHandleTask1 != NULL) {
+	// 		// if (eTaskGetState(xHandleTask1) == eDeleted) {
+	// 			// printf("Creating Task\n");
+	// 			// // vTaskResume(xHandleTask1);
+	// 			// xTaskCreate(task_1, "task_1", 2048, NULL, 25, &xHandleTask1);
+	// 			// assert(xHandleTask1);
+	// 		// }
+	// 	// } 
+	// 	// else {
+	// 	// 	printf("Creating Task\n");
+	// 	// 	vTaskResume(xHandleTask1);
+	// 	// 	// xTaskCreate(task_1, "task_1", 2048, NULL, 25, xHandleTask1);
+	// 	// 	configASSERT(xHandleTask1);
+	// 	// }
+
+		
+	// 	// if (eTaskGetState(xHandleTask1) == eReady) {
+	// 		printf("Notifying Task\n");
+	// 		xTaskNotify(xHandleTask1, 1, eSetValueWithoutOverwrite);
+	// 	// }
+	// 	// // vTaskDelay(pdMS_TO_TICKS(100));
+	// 	// // printf("Suspending Task\n");
+	// 	// // vTaskSuspend(xHandleTask1);
+	// 	// // vTaskDelay(pdMS_TO_TICKS(100));
+	// 	// // printf("Resuming Task\n");
+	// 	// // vTaskResume(xHandleTask1);
+
+
+	// 	vTaskDelay(pdMS_TO_TICKS(5));
+	// 	// if (xHandleTask1 != NULL) {
+	// 	// 	printf("Deleting Task\n");
+	// 	// 	vTaskDelete(xHandleTask1);
+	// 	// }
+
+	// 	printf("Suspending task\n");
+	// 	vTaskDelete(xHandleTask1);
+		
+	// 	// xTaskNotify(xHandleTask1, 0, eSetValueWithOverwrite);
+
+	// 	vTaskDelay(pdMS_TO_TICKS(3000));
+
+	// }
+
+
+	
+
+	// nvsWriteBlob("wifi_settings", "wifi_ssid", "wuntangLAN", sizeof(char) * 32);
+	// char *c = malloc(sizeof(char) * 32);
+	// memcpy(c, nvsReadBlob("wifi_settings", "wifi_ssid", sizeof(char) * 32), sizeof(char) * 32);
+	// // char *c = nvsReadBlob("wifi_settings", "wifi_ssid", sizeof(char) * 11);
+	// printf("%s\n", c); 
+
+	// initialize the NVS.
+    // esp_err_t err = nvs_flash_init();
+    // if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    //     // NVS partition was truncated and needs to be erased
+    //     // Retry nvs_flash_init
+    //     ESP_ERROR_CHECK(nvs_flash_erase());
+    //     err = nvs_flash_init();
+    // }
+    // ESP_ERROR_CHECK( err );
+
+	// wifi_config_t foo = {
+	// 	.sta = {.ssid = "wutangLan",
+	// 			.password = "test"},
+	// };
+	
+	// nvsWriteBlob("wifi_settings", "wifi_config_t", &foo, sizeof(wifi_config_t) );
+
+	// wifi_config_t *bar = NULL;
+	// bar = nvsReadBlob("wifi_settings", "wifi_config_t", sizeof(wifi_config_t));
+	
+	// printf("bar: %s\n", bar->sta.ssid);
+
+	// declare a nvs handler and our wifi config to restore.
+	// nvs_handle_t storage_handle;
+	// void *nvs_data = (void*)malloc(sizeof(void*));
+	// size_t nvs_buffer = sizeof(a);
+	// // open the wifi_settings namespace with read/write permissions, passing in the handler.
+	// ESP_ERROR_CHECK(nvs_open("wifi_settings", NVS_READWRITE, &storage_handle));
+	// ESP_ERROR_CHECK(nvs_get_blob(storage_handle, "wifi_config_t", &nvs_data, &nvs_buffer));
+	// printf("value: %i\n", (int)nvs_data);
+	// size_t t = sizeof(int);
+	// wifi_config_t *b = (wifi_config_t*)nvsReadBlob("wifi_settings", "wifi_config_t", sizeof(wifi_config_t));
+
+	// wifi_config_t bar = {
+	// 	.sta = {
+	// 		.ssid = "wutanglan",
+	// 	}
+	// };
+	// printf("value b: %s\n", bar.sta.ssid);
+	// printf("value b: %s\n", b->sta.ssid);
+
+	// printf("stop");
 	// if (b == NULL) {
 	// 	printf("b is null\n");
 	// } else {

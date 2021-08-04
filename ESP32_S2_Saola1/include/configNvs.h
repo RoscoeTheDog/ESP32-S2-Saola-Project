@@ -1,6 +1,6 @@
 
 #include "nvs_flash.h"
 
-extern void nvsWriteBlob(char *location, char *key, void *args, size_t size);
+extern void nvsWriteBlob(const char *location, const char *key, void *args, size_t size);
 
-extern void* nvsReadBlob(char *location, char *key, size_t size);
+extern void* nvsReadBlob(const char *location, const char *key, size_t size);
