@@ -22,7 +22,7 @@ void initializeTimerConfig() {
 	char *TAG = "initializeTimerConfig";
 	// Note: do not use C designated initializers as they are not friendly with C++ syntax.
 	config_timer_0.clk_src = TIMER_SRC_CLK_APB;
-	config_timer_0.divider = 2;					 // 40hz
+	config_timer_0.divider = 20000;					 // approx 4khz
 	config_timer_0.auto_reload = TIMER_AUTORELOAD_EN;
 	config_timer_0.intr_type = TIMER_INTR_NONE;
 	config_timer_0.counter_dir = TIMER_COUNT_UP;
@@ -33,7 +33,7 @@ void initializeTimerConfig() {
 
 	// alarm value is number of cycle periods the timer has elapsed.
 	// example: if set at 5khz speed, then 5,000hz/5 tics = 1,000 us/period or 0.001 second (1ms)
-	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1000 * 120);
+	timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, 1); // 1000 * 120;
 	// Attach a callback (isr)
 	timer_isr_callback_add(TIMER_GROUP_0, TIMER_0, xISR_button_0, NULL, ESP_INTR_FLAG_SHARED);
 

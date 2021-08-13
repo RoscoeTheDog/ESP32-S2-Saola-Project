@@ -11,71 +11,89 @@
 TaskHandle_t xHandleRTOSDebug = NULL;
 TaskHandle_t xHandleLEDFade = NULL;
 TimerHandle_t xHandleTimerLED = NULL;
-TaskHandle_t xHandleOpenCurtains = NULL;
-TaskHandle_t xHandleCloseCurtains = NULL;
-TaskHandle_t xHandleCurtainStepperForward = NULL;
-TaskHandle_t xHandleCurtainStepperReverse = NULL;
+TaskHandle_t xHandleMoveStepperForward = NULL;
+TaskHandle_t xHandleMoveStepperReverse = NULL;
 TaskHandle_t xHandleSleepTask = NULL;
-TaskHandle_t xHandlePollWebServer = NULL;
+TaskHandle_t xHandlePollServer = NULL;
 TaskHandle_t xHandleSntpStatus = NULL;
 TaskHandle_t xHandleUpdateMotor = NULL;
 TaskHandle_t xHandleFoo = NULL;
 TaskHandle_t xHandleStatusLEDWatchdog = NULL;
 TaskHandle_t xHandleWifiReconnect = NULL;
-TaskHandle_t xHandleTask1 = NULL;
-TaskHandle_t xHandleTask2 = NULL;
 TaskHandle_t xHandleHttpRequestServerData = NULL;
-
-portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
+TaskHandle_t xHandleSubmitLocalData = NULL;
+TaskHandle_t xHandleWifiPersistingTasks = NULL;
 
 void initializeTasks() {
 	char *TAG = "initializeTasks";
 
 	ESP_LOGI(TAG, "initializing vTaskRTOSDebug");
-	xTaskCreate(vTaskRTOSDebug, "vTaskRTOSDebug", 4096, NULL, 25, &xHandleRTOSDebug);
+	xTaskCreate(vTaskRTOSDebug, "vTaskRTOSDebug", 4096, NULL, 24, &xHandleRTOSDebug);
 	configASSERT(xHandleRTOSDebug);
 	// xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
 
 	ESP_LOGI(TAG, "initializing vTaskSleep");
 	// ESP_ERROR_CHECK(esp_sleep_enable_wifi_wakeup());
-	xTaskCreate(vTaskSleep, "vTaskSleep", 2048, NULL, 25, &xHandleSleepTask);
+	xTaskCreate(vTaskSleep, "vTaskSleep", 2048, NULL, 24, &xHandleSleepTask);
 	configASSERT(xHandleSleepTask);
 
 	ESP_LOGI(TAG, "initializing vTaskStatusLEDWatchdog");
-	xTaskCreate(vTaskStatusLEDWatchdog, "vTaskStatusLEDWatchdog", 2048, NULL, 25, &xHandleStatusLEDWatchdog);
+	xTaskCreate(vTaskStatusLEDWatchdog, "vTaskStatusLEDWatchdog", 2048, NULL, 23, &xHandleStatusLEDWatchdog);
 	configASSERT(xHandleStatusLEDWatchdog);
 	xTaskNotify(xHandleStatusLEDWatchdog, 1, eSetValueWithoutOverwrite);
+
+	ESP_LOGI(TAG, "initializing vTaskLEDFade");
+	xTaskCreate( vTaskLEDFade, "vTaskLEDFade", 2048, NULL, 23, &xHandleLEDFade);
+	configASSERT(xHandleLEDFade);
+
+	ESP_LOGI(TAG, "initializing vTaskMoveStepperForward");
+	xTaskCreate(vTaskMoveStepperForward, "moveStepperForward", 2048, NULL, 22, &xHandleMoveStepperForward);
+	configASSERT(xHandleMoveStepperForward);
+
+	ESP_LOGI(TAG, "initializing vTaskMoveStepperReverse");
+	xTaskCreate(vTaskMoveStepperReverse, "curtainStepperReverse", 2048, NULL, 22, &xHandleMoveStepperReverse);
+	configASSERT(xHandleMoveStepperReverse);
 
 	ESP_LOGI(TAG, "initializing vTaskWifiReconnect");
 	xTaskCreate(vTaskWifiReconnect, "vTaskWifiReconnect", 2048, NULL, 22, &xHandleWifiReconnect);
 	configASSERT(xHandleWifiReconnect);
 
-	ESP_LOGI(TAG, "initializing vTaskSntpStatus");
-	xTaskCreate(vTaskSntpStatus, "vTaskSntpStatus", 2048, NULL, 20, &xHandleSntpStatus);
-	configASSERT(xHandleSntpStatus);
+	ESP_LOGI(TAG, "initializing vTaskSubmitLocalData");
+	xTaskCreate(vTaskSubmitLocalData, "vTaskSubmitLocalData", 4096, NULL, 10, &xHandleSubmitLocalData);
+	configASSERT(xHandleSubmitLocalData);
 
 	ESP_LOGI(TAG, "initializing vTaskUpdateMotor");
-	xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 20, &xHandleUpdateMotor);
+	xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 10, &xHandleUpdateMotor);
 	configASSERT(xHandleUpdateMotor);
+
 	ESP_LOGI(TAG, "initializing vTaskPollServer");
-	xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 10, &xHandlePollWebServer);
-	configASSERT(xHandlePollWebServer);
+	xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 10, &xHandlePollServer);
+	configASSERT(xHandlePollServer);
 
-	ESP_LOGI(TAG, "initializing vTaskLEDFade");
-	// Init the task, passing in the callback, a name, stack size, callback params, priority and finally-- the handler itself.
-	xTaskCreate( vTaskLEDFade, "vTaskLEDFade", 2048, NULL, 20, &xHandleLEDFade);
-	// assert the task to ensure it was created succesfully. it will be thrown in console otherwise.
-	configASSERT(xHandleLEDFade);
+	ESP_LOGI(TAG, "initializing vTaskWifiPersistingTasks");
+	xTaskCreate(vTaskWifiPersistingTasks, "vTaskWifiPersistingTasks", 2048, NULL, 20, &xHandleWifiPersistingTasks);
+	configASSERT(xHandleWifiPersistingTasks);
+	xTaskNotify(xHandleWifiPersistingTasks, 1, eSetValueWithoutOverwrite);
+}
 
-	ESP_LOGI(TAG, "initializing vTaskCurtainMotor");
-	xTaskCreate(vTaskRotateStepperForward, "curtainStepperForward", 2048, NULL, 20, &xHandleCurtainStepperForward);
-	xTaskCreate(vTaskRotateStepperReverse, "curtainStepperReverse", 2048, NULL, 20, &xHandleCurtainStepperReverse);
-	xTaskCreate(vTaskOpenCurtains, "curtainOpen", 2048, NULL, 20, &xHandleOpenCurtains);
-	xTaskCreate(vTaskCloseCurtains, "curtainClose", 2048, NULL, 20, &xHandleCloseCurtains);
-	configASSERT(xHandleOpenCurtains);
-	configASSERT(xHandleCloseCurtains);
-	configASSERT(xHandleCurtainStepperForward);
-	configASSERT(xHandleCurtainStepperReverse);
+void vTaskWifiPersistingTasks(void *args) {
+
+	while(1) {
+		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+
+		if(WIFI_CONNECTED) {
+
+			if (xHandlePollServer && (eTaskGetState(xHandleMoveStepperForward) != eRunning || eTaskGetState(xHandleMoveStepperForward) != eReady) ) {
+				xTaskNotify(xHandlePollServer, 1, eSetValueWithoutOverwrite);
+			}
+
+			vTaskDelay(pdMS_TO_TICKS(1000));
+		}
+		
+		vTaskDelay(pdMS_TO_TICKS(1));
+		xTaskNotify(xHandleWifiPersistingTasks, 1, eSetValueWithoutOverwrite);
+
+	}
 
 }
 
@@ -87,18 +105,23 @@ void vTaskWifiReconnect(void *args) {
 
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+		esp_task_wdt_add(xHandleWifiReconnect);
 
-        while (!WIFI_CONNECTED) {
-			// Suspend the polling of the server immediately if not already performed
-			// vTaskSuspend(xHandlePollWebServer);
-			xTaskNotify(xHandlePollWebServer, 0, eSetValueWithOverwrite);
+        if (!WIFI_CONNECTED) {
+
+			// // Suspend the polling of the server immediately if not already performed
+			// if (xHandlePollServer != NULL && eTaskGetState(xHandlePollServer) == eRunning) {
+			// 	ESP_LOGI(TAG, "NOTIFY TASK xHandlePollServer = '0' ");
+			// 	xTaskNotify(xHandlePollServer, 0, eSetValueWithOverwrite);
+			// }
 
 			// update the wifi config with whatever is saved in globals.h
 			updateWifiConfig();
 			ESP_LOGI(TAG, "Attempting to connect to AP...");
 			ESP_LOGI(TAG, "wifi_config.sta.ssid: %s", (char*)wifi_config.sta.ssid);
             ESP_LOGI(TAG, "wifi_config.sta.password: %s", (char*)wifi_config.sta.password);
-			
+
+			esp_task_wdt_reset();
             esp_err_t err = esp_wifi_connect();
             if (err == ESP_OK) {
                 WIFI_CONNECTED = true;
@@ -108,11 +131,17 @@ void vTaskWifiReconnect(void *args) {
 				ESP_LOGI(TAG, "ESP_ERR_WIFI_SSID returned. Incorrrect wifi credentials saved.");
 			}
 
+			esp_task_wdt_reset();
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
-
+		// enforce task wdt reset
+		esp_task_wdt_reset();
+		// unschedule before getting blocked
+		esp_task_wdt_delete(xHandleWifiReconnect);
+		// delay for 1 ms, allowing other tasks with lower priority to run during this time.
+		vTaskDelay(pdMS_TO_TICKS(1));
+		// continue running the task unless otherwise blocked or deleted
 		xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithoutOverwrite);
-
 	}
 }
 
@@ -120,80 +149,69 @@ void vTaskUpdateMotor(void * args) {
 	char *TAG = "vTaskUpdateMotor";
 	long motor_position_steps_prev = MOTOR_POSITION_STEPS;
 	long steps_remaining = 0;
+	long distance = 0;
 
 	while (1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+		// TODO: optimize this code more
+		// always recalculate the assigned percentage in steps.
+		int length_mm = CURTAIN_LENGTH_INCH * 25.4;
+		int circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
+		long motor_percentage_steps = (CURTAIN_PERCENTAGE * .01) * (double)calcStepsForRotation(StepperMotor_1, (length_mm / circumference_mm) * 360);
 		
-		if (motor_position_steps_prev != MOTOR_POSITION_STEPS) {
-			ESP_LOGI(TAG, "Coordinates Received. Updating Motor to %f Percent", CURTAIN_PERCENTAGE);
-			esp_task_wdt_add(xHandleUpdateMotor);
-			long steps_to_travel = MOTOR_POSITION_STEPS - motor_position_steps_prev;
-			steps_remaining = steps_to_travel;
+		// server is read, parsed and new percentage is set.
+		// calculate the delta between current position and the new position in %
+		steps_remaining = motor_percentage_steps - MOTOR_POSITION_STEPS;
+		long steps_to_travel = abs(steps_remaining);
 
-			// DISTANCE / RPM / SECONDS
-			if (steps_to_travel / StepperConfig_1->microstepping * StepperConfig_1->rpm * 60 * 360 > CONFIG_TASK_WDT_TIMEOUT_S) {
+		// ABS DISTANCE (steps) / per SECOND
+		if (steps_to_travel / StepperConfig_1->microstepping * StepperConfig_1->rpm * 60 * 360 > CONFIG_TASK_WDT_TIMEOUT_S) {
+			// there may be some associated overhead from calling and using the stepper API.
+			// take 90% of the total travel distance in a single action instead to avoid tripping the task wdt by accident
+			long move_interval = (steps_remaining / (CONFIG_TASK_WDT_TIMEOUT_S + 1) );
+			if (move_interval > 4) {
+				move_interval /= 4;
+			}
+			while (abs(steps_remaining)) {
 				
-				// ESP_LOGI(TAG, "steps_to_travel may be greater than task timeout period. Executing in segments.");
-				// there may be some associated overhead from calling and using the stepper API.
-				// take 80% of the normal travel distance in a single action instead to avoid tripping the task wdt
-				int val = 0.9 * (steps_remaining / CONFIG_TASK_WDT_TIMEOUT_S);
-				while (steps_remaining) {
-					// printf("steps_remaining: %li\n", steps_remaining);
-
-					if (steps_remaining > val) {
-						// printf("moving number of steps: %i\n", val);
-						move(StepperMotor_1, val);
-						steps_remaining -= val;
-					} else {
-						// printf("moving last number of steps: %li\n", steps_remaining);
-						move(StepperMotor_1, steps_remaining);
-						steps_remaining = 0;
-					}
-					esp_task_wdt_reset();
+				if (abs(steps_remaining) > abs(move_interval)) {
+					// portENTER_CRITICAL(&mux);
+					move(StepperMotor_1, move_interval);
+					MOTOR_POSITION_STEPS += move_interval;
+					// portEXIT_CRITICAL(&mux);
+					steps_remaining -= move_interval;
+				} else {
+					// portENTER_CRITICAL(&mux);
+					move(StepperMotor_1, steps_remaining);
+					MOTOR_POSITION_STEPS += steps_remaining;
+					// portEXIT_CRITICAL(&mux);
+					steps_remaining = 0;
 				}
 
-			} else {
-				// printf("steps_to_travel being executed once\n");
-				move(StepperMotor_1, steps_to_travel);
-				esp_task_wdt_reset();
+				vTaskDelay(1);
 			}
-			
-			// update value of last traveled
-			motor_position_steps_prev = MOTOR_POSITION_STEPS;
-			
-			// TODO: make this account for the material thickness around the rod dynamically
-			int length_mm = CURTAIN_LENGTH_INCH * 25.4;
-			int circumference = 2 * M_PI * (ROD_DIAMETER_MM/2);
-			// update globals (motor_position_steps / maximum_step_length)
-			CURTAIN_PERCENTAGE = MOTOR_POSITION_STEPS / calcStepsForRotation(StepperMotor_1, (length_mm / circumference) * 360);
 
-			// just to make things more readable.
-			// int curtain_length_mm = CURTAIN_LENGTH_INCH * 25.4;
-			// int circumference = 2 * M_PI * ((CURTAIN_LENGTH_INCH * 25.4) / 2) + MATERIAL_THICKNESS_MM)
-			// (MATERIAL_THICKNESS_MM * (CURTAIN_LENGTH_INCH * 25.4) / (2 * M_PI * (ROD_DIAMETER_MM / 2) ) 
-			
-			// enschedule the task when done to prevent panic during thread lock.
-			esp_task_wdt_delete(xHandleUpdateMotor);
+		} else {
+			move(StepperMotor_1, steps_remaining);
+			MOTOR_POSITION_STEPS += steps_remaining;
+			steps_remaining = 0;
 		}
 		
+		// update value of last traveled
+		motor_position_steps_prev = MOTOR_POSITION_STEPS;
+		
+		// TODO: make this account for the material thickness around the rod dynamically
+		// int length_mm = CURTAIN_LENGTH_INCH * 25.4;
+		// int circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
+		// update globals (motor_position_steps / maximum_step_length)
+		// CURTAIN_PERCENTAGE = MOTOR_POSITION_STEPS / (float)calcStepsForRotation(StepperMotor_1, (length_mm / circumference_mm) * 360);
+		// ESP_LOGI(TAG, "CURTAIN_PERCENTAGE: %f", CURTAIN_PERCENTAGE);
+		// just to make things more readable.
+		// int curtain_length_mm = CURTAIN_LENGTH_INCH * 25.4;
+		// int circumference_mm = 2 * M_PI * ((CURTAIN_LENGTH_INCH * 25.4) / 2) + MATERIAL_THICKNESS_MM)
+		// (MATERIAL_THICKNESS_MM * (CURTAIN_LENGTH_INCH * 25.4) / (2 * M_PI * (ROD_DIAMETER_MM / 2) ) 
+		
 	}
-
-}
-
-void vTaskSntpStatus(void * args) {
-	char *TAG = "vTaskSntpStatus";
-	while (1) {
-		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-
-		if (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET) {
-			ESP_LOGI(TAG, "Waiting for system time to be set...");
-		}
-		if (sntp_get_sync_status() == SNTP_SYNC_STATUS_IN_PROGRESS) {
-			ESP_LOGI(TAG, "Smooth time sync in progress...");
-		}
-
-		vTaskDelay(pdMS_TO_TICKS(1));
-    }
 
 }
 
@@ -208,8 +226,8 @@ void vTaskStatusLEDWatchdog( void *args) {
 			vTaskDelay(pdMS_TO_TICKS(200));
 			setStatusLEDBlue();
 		}
-		if (HTTP_ERROR) {
-			ESP_LOGI(TAG, "SYSTEM WAITING ON HTTP_ERROR");
+		if (WIFI_CONNECTED && HTTP_ERROR) {
+			ESP_LOGI(TAG, "SYSTEM WAITING ON SERVER READ HTTP_ERROR");
 			setStatusLEDYellow();
 			vTaskDelay(pdMS_TO_TICKS(100));
 			setStatusLEDBlue();
@@ -218,6 +236,10 @@ void vTaskStatusLEDWatchdog( void *args) {
 			setStatusLEDYellow();
 			vTaskDelay(pdMS_TO_TICKS(100));
 			setStatusLEDBlue();
+		}
+		if (WIFI_CONNECTED && UPLOADING) {
+			ESP_LOGI(TAG, "SYSTEM UPLOAD IN PROGRESS");
+			setStatusLEDYellow();
 		}
 		if (WIFI_CONNECTED) {
 			setStatusLEDBlue();
@@ -233,55 +255,50 @@ void vTaskStatusLEDWatchdog( void *args) {
 
 }
 
-// simple wrapped function to ensure the resources are freed 
-void vTaskHttpRequestServerData(void *args) {
-
-	while(1) {
-		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-		http_request_server_data();
-		xTaskNotify(xHandleHttpRequestServerData, 1, eSetValueWithOverwrite);
-	}
-	
-}
-
 void vTaskPollServer(void * args) {
 	char *TAG = "vTaskPollServer";
 
 	while(true) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-		esp_task_wdt_add(xHandlePollWebServer);
+		// esp_task_wdt_add(xHandlePollServer);
 		
 		// wrap in while loop for faster exit in event disconnect (shouldn't be needed but safety)
-		if (WIFI_CONNECTED && DATETIME_SYNCED) { 
-			ESP_LOGI(TAG, "STARTING POLL WEB SERVER");
-			// only flag the HTTP_ERROR system macro after a timeout period of 5 
-			uint64_t timeout_count_start = esp_timer_get_time();
-			esp_err_t err = http_request_server_data();
-			while (err != ESP_OK) {
-				// 100ms delay between requests
-				vTaskDelay(pdMS_TO_TICKS(100));	
-				// perform request again
-				err = http_request_server_data();
-				// exit if time took > then timeout period
-				if (esp_timer_get_time() - timeout_count_start > 5000000) {
-					HTTP_ERROR = true;
-					break;
-				}
-			}
-
-			if (err == ESP_OK && DATETIME_SYNCED) {
-
-				if (http_parse_server_data() == ESP_OK) {
-					xTaskNotify(xHandleUpdateMotor, 1, eSetValueWithOverwrite);
-				}
-				
-			}
+		while (xHandleSubmitLocalData != NULL && eTaskGetState(xHandleSubmitLocalData) != eReady && eTaskGetState(xHandleSubmitLocalData) != eRunning) {
 			
+			if (WIFI_CONNECTED && DATETIME_SYNCED) { 
+			
+				ESP_LOGI(TAG, "BEGIN SERVER READ REQUEST");
+				if (httpFetchServerData() != ESP_OK) {
+					HTTP_ERROR = true;
+				} else {
+					HTTP_ERROR = false;
+				}
+				if (!HTTP_ERROR && DATETIME_SYNCED) {
+
+					if (httpParseServerData() == ESP_OK) {
+						ESP_LOGI(TAG, "SIGNALING UPDATE MOTOR");
+
+						if (xHandleUpdateMotor) {
+							xTaskNotify(xHandleUpdateMotor, 1, eSetValueWithoutOverwrite);
+						}
+					}
+					
+				}
+
+			}
+			break;
+			// vTaskDelay(pdMS_TO_TICKS(1000));
 		}
-		xTaskNotify(xHandlePollWebServer, 1, eSetValueWithoutOverwrite);
-		vTaskDelay(pdMS_TO_TICKS(100));
-		esp_task_wdt_reset();
-		esp_task_wdt_delete(xHandlePollWebServer);
+		HTTP_ERROR = false;
+
+		// ESP_LOGI(TAG, "REQUEST CANCELED BY HIGHER PRIORITY TASK (xHandleSubmitLocalData)");
+		vTaskDelay(1);	
+		
+		// if (xHandlePollServer) {
+		// 	xTaskNotify(xHandlePollServer, 1, eSetValueWithoutOverwrite);
+		// }
+
+
 	}
 
 }
@@ -356,119 +373,218 @@ void vTaskSleep(void *pvParameters) {
 
 }
 
-void vTaskOpenCurtains(void * pvPerameters) {
-	char *TAG = "vTaskOpenCurtains";
-	while(1) {
-		// Block and wait for message to unlock
-		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-		
-		
-		// Schedule task to wdt, so we can reset timeout periodically.
-		esp_task_wdt_add(xHandleCurtainStepperForward);
-
-		// Rotate the stepper motor forward.
-		// We use an interval of 360 degrees so that it has time to run until the ISR checks button state again.
-		move(StepperMotor_1, calcStepsForRotation(StepperMotor_1, 360));
-
-		// Reset the wdt from this running task
-		esp_task_wdt_reset();
-		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
-		esp_task_wdt_delete(xHandleCurtainStepperForward);
-		// Give idle task a moment to free up any resources
-		// vTaskDelay(1);
-		
-	}
-
-}
-
-void vTaskCloseCurtains( void * pvPerameters) {
-	char *TAG = "vTaskCloseCurtains";
-	float distance = CURTAIN_LENGTH_INCH * 25.4;	// 25.4mm per inch.
-	// printf("distance (inches): %f\n", distance);
-	float circumference = 2 * M_PI * (ROD_DIAMETER_MM/2);	// find the circumference (2 * pi * r)
-	// printf("circumference (mm): %f\n", circumference);
-	int revolutionsToTarget = distance / circumference;
-	// printf("revolution to target (revs): %i\n", revolutionsToTarget);
-	short completed = 0;
+void vTaskSubmitLocalData(void *args) {
+	char *TAG = "vTaskSubmitLocalData";
 
 	while(1) {
-		// Block and wait for message to unlock
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-		// https://docs.espressif.com/projects/esp-idf/en/latest/esp32s2/api-reference/system/wdts.html
+		// esp_task_wdt_add(xHandleSubmitLocalData);
+
+		// completely delete the poll web server task to prevent http client problems
+		// if (xHandlePollServer && eTaskGetState(xHandlePollServer) != eSuspended) {
+		// 	ESP_LOGI(TAG, "SUSPENDING TASK vTaskPollWebServer");
+		// 	vTaskSuspend(xHandlePollServer);
+		// }
+
 		// portENTER_CRITICAL(&mux);
-		// portDISABLE_INTERRUPTS();
+		if (formSent) {
+			cJSON_Delete(formSent);
+			formSent = NULL;
+		}
+		// portEXIT_CRITICAL(&mux); 
+		formSent = cJSON_CreateObject();
 
-		// Schedule task to wdt, so we can reset timeout periodically.
-		esp_task_wdt_add(xHandleCloseCurtains);
+		cJSON_AddStringToObject(formSent, "WRITE_KEY", WRITE_KEY);
+		cJSON_AddStringToObject(formSent, "DeviceID", LOCAL_DEVICE_ID);
+		cJSON_AddStringToObject(formSent, "USERNAME", USERNAME);
+		
+		// https://www.cplusplus.com/reference/cstdio/sprintf/
+		char buffer[512];
+		sprintf(buffer, "%f", CURTAIN_PERCENTAGE);
+		cJSON_AddStringToObject(formSent, "CURTAIN_PERCENTAGE", buffer);
 
-		move(StepperMotor_1, calcStepsForRotation(StepperMotor_1, 360));
-		completed++;
+		// portENTER_CRITICAL(&mux); 
+		if (jsonStringBuffer) {
+			cJSON_free(jsonStringBuffer);
+			jsonStringBuffer = NULL;
+		}
+		// portEXIT_CRITICAL(&mux);
+		jsonStringBuffer = cJSON_PrintUnformatted(formSent);
 
-		if (completed < revolutionsToTarget) {
-			// Reset the wdt from this running task
-			esp_task_wdt_reset();
-			// Continue the task until the amount of revolutions has been reached
-			xTaskNotify(xHandleCloseCurtains, 1, eIncrement);
-			// Give idle task a moment to free up any resources
-			vTaskDelay(1);
+		esp_err_t err = httpPostData(jsonStringBuffer);
+		// only try to validate the data if the http request went through.
+		// otherwise parsing of the http response will fail.
+		if (err == ESP_OK) {
+			// enter critical section to avoid shared json resource becoming corrupt during validation
+			// portENTER_CRITICAL(&mux); 
+			err = httpValidateFormSubmission(jsonStringBuffer);
+			// portEXIT_CRITICAL(&mux);
+		}
+		if (err == ESP_OK) {
+
+			// portENTER_CRITICAL(&mux); 
+			if (jsonStringBuffer) {
+				cJSON_free(jsonStringBuffer);
+				jsonStringBuffer = NULL;
+			}
+			// portEXIT_CRITICAL(&mux); 
+			jsonStringBuffer = cJSON_PrintUnformatted(formSent);
+
+			ESP_LOGI(TAG, "REQUEST SUCCESSFULL -- %s", jsonStringBuffer);
+			
+			if (xHandleWifiPersistingTasks) {
+				xTaskNotify(xHandleWifiPersistingTasks, 1, eSetValueWithoutOverwrite);
+			}
+			
+			// if (xHandlePollServer && eTaskGetState(xHandlePollServer) == eSuspended) {
+			// 	// reinitialize the deleted task and notify it to resume
+			// 	ESP_LOGI(TAG, "RESUMING TASK vTaskPollWebServer");
+			// 	vTaskResume(xHandlePollServer);
+			// 	xTaskNotify(xHandlePollServer, 1, eSetValueWithoutOverwrite);
+			// }
+			// if (xHandlePollServer) {
+			// 	xTaskNotify(xHandlePollServer, 1, eSetValueWithoutOverwrite);
+			// }
 		} else {
-			// Tell the task to stop running.
-			xTaskNotify(xHandleCloseCurtains, 0, eSetValueWithOverwrite);
-			// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
-			esp_task_wdt_delete(xHandleCloseCurtains);
-			// reset the completed revolution counter
-			completed = 0;
-
-			// portEXIT_CRITICAL_ISR(&mux);
-			// portENABLE_INTERRUPTS();
-			// esp_int_wdt_cpu_init();
-			// esp_int_wdt_init();
+			ESP_LOGI(TAG, "REQUEST FAILED. RETRYING...");
+			// esp_task_wdt_reset();
+			xTaskNotify(xHandleSubmitLocalData, 1, eSetValueWithoutOverwrite);
 		}
 
+		// portENTER_CRITICAL(&mux);
+		// if (xHandlePollServer == NULL) {
+		// 	xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 10, &xHandlePollServer);
+		// 	configASSERT(xHandlePollServer);
+		// 	xTaskNotify(xHandlePollServer, 1, eSetValueWithOverwrite);
+		// }
+		// portEXIT_CRITICAL(&mux);
+
+		
+
+
+		vTaskDelay(1);
+		// esp_task_wdt_reset();
+		// esp_task_wdt_delete(xHandleSubmitLocalData);
+	}
+
+
+}
+
+void vTaskMoveStepperForward(void * pvPerameters) {
+	char *TAG = "vTaskMoveStepperForward";
+	int	length_mm = CURTAIN_LENGTH_INCH * 25.4;
+	int	circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
+	int MOTOR_STEP_LIMIT = StepperMotor_1->Config->microstepping * StepperMotor_1->Config->motor_steps * (length_mm/circumference_mm);
+	int interval = calcStepsForRotation(StepperMotor_1, 1);
+
+	while(true) {
+		// Block and wait for message to unlock
+		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+
+		if (xHandleSubmitLocalData && (eTaskGetState(xHandleSubmitLocalData) == eRunning || eTaskGetState(xHandleSubmitLocalData) == eReady) ) {
+			xTaskNotify(xHandleSubmitLocalData, 0, eSetValueWithoutOverwrite);
+		}
+
+		if (xHandleWifiPersistingTasks) {
+			xTaskNotify(xHandleWifiPersistingTasks, 0, eSetValueWithoutOverwrite);
+		}
+
+		// if (xHandlePollServer && eTaskGetState(xHandlePollServer) != eSuspended) {
+		// 	vTaskSuspend(xHandlePollServer);
+		// }
+
+		// Schedule task to wdt, so we can reset timeout periodically.
+		esp_task_wdt_add(xHandleMoveStepperForward);
+
+		// TODO: make this account for the material thickness around the rod dynamically
+		length_mm = CURTAIN_LENGTH_INCH * 25.4;
+		circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
+		MOTOR_STEP_LIMIT = StepperMotor_1->Config->microstepping * StepperMotor_1->Config->motor_steps * (length_mm/circumference_mm);
+		portENTER_CRITICAL(&mux);
+		if (MOTOR_POSITION_STEPS < MOTOR_STEP_LIMIT) {
+			// keep moving motor in intervals unless it is smaller than a single interval period
+			if (interval < MOTOR_STEP_LIMIT - MOTOR_POSITION_STEPS) {
+				move(StepperMotor_1, interval);
+				MOTOR_POSITION_STEPS += interval;
+			} else {
+				move(StepperMotor_1, MOTOR_STEP_LIMIT - MOTOR_POSITION_STEPS);
+				MOTOR_POSITION_STEPS += MOTOR_STEP_LIMIT - MOTOR_POSITION_STEPS;
+			}
+			// update globals (motor_position_steps / maximum_step_length)
+			CURTAIN_PERCENTAGE = MOTOR_POSITION_STEPS / (float)calcStepsForRotation(StepperMotor_1, (length_mm / circumference_mm) * 360) * 100;
+		}
+		portEXIT_CRITICAL(&mux);
+
+		// Reset the wdt from this running task
+		esp_task_wdt_reset();
+
+		if (!BTN_0_PIN_STATE && !BTN_1_PIN_STATE) {
+
+			if (xHandleSubmitLocalData) {
+				xTaskNotify(xHandleSubmitLocalData, 1, eSetValueWithoutOverwrite);
+			}
+
+		}
+
+		// block this task for just a moment to allow other ready tasks not to starve out the watchdog.
+		vTaskDelay(1);
+
+		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
+		esp_task_wdt_delete(xHandleMoveStepperForward);
 	}
 
 }
 
-void vTaskRotateStepperForward(void * pvPerameters) {
-	char *TAG = "vTaskRotateStepperForward";
+void vTaskMoveStepperReverse(void * pvPerameters) {
+	char *TAG = "vTaskMoveStepperReverse";
+	int	length_mm = CURTAIN_LENGTH_INCH * 25.4;
+	int	circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
+	int MOTOR_STEP_LIMIT = StepperMotor_1->Config->microstepping * StepperMotor_1->Config->motor_steps * (length_mm/circumference_mm);
+	int interval = calcStepsForRotation(StepperMotor_1, 1);
+	
 	while(1) {
-		// Block and wait for message to unlock
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-		// Schedule task to wdt, so we can reset timeout periodically.
-		esp_task_wdt_add(xHandleCurtainStepperForward);
+		esp_task_wdt_add(xHandleMoveStepperReverse);
 
-		// Rotate the stepper motor forward.
-		// We use an interval of 360 degrees so that it has time to run until the ISR checks button state again.
-		move(StepperMotor_1, calcStepsForRotation(StepperMotor_1, 360));
+		if (xHandleSubmitLocalData && (eTaskGetState(xHandleSubmitLocalData) == eRunning || eTaskGetState(xHandleSubmitLocalData) == eReady) ) {
+			xTaskNotify(xHandleSubmitLocalData, 0, eSetValueWithoutOverwrite);
+		}
+
+		// TODO: make this account for the material thickness around the rod dynamically
+		length_mm = CURTAIN_LENGTH_INCH * 25.4;
+		circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
+		MOTOR_STEP_LIMIT = StepperMotor_1->Config->microstepping * StepperMotor_1->Config->motor_steps * (length_mm/circumference_mm);
+
+		portENTER_CRITICAL(&mux);
+		if (MOTOR_POSITION_STEPS > 0) {
+			// keep moving motor in intervals unless it is smaller than a single interval period
+			if (interval < MOTOR_POSITION_STEPS) {
+				move(StepperMotor_1, -interval);
+				MOTOR_POSITION_STEPS -= interval;
+			} else {
+				move(StepperMotor_1, -MOTOR_POSITION_STEPS);
+				MOTOR_POSITION_STEPS -= MOTOR_POSITION_STEPS;
+			}
+			CURTAIN_PERCENTAGE = MOTOR_POSITION_STEPS / (float)calcStepsForRotation(StepperMotor_1, (length_mm / circumference_mm) * 360) * 100;
+		}
+		portEXIT_CRITICAL(&mux);		
 
 		// Reset the wdt from this running task
 		esp_task_wdt_reset();
-		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
-		esp_task_wdt_delete(xHandleCurtainStepperForward);
-		// Give idle task a moment to free up any resources
+
+		if (!BTN_0_PIN_STATE && !BTN_1_PIN_STATE) {
+
+			if (xHandleSubmitLocalData) {
+				xTaskNotify(xHandleSubmitLocalData, 1, eSetValueWithOverwrite);
+			}
+
+		}
+
+		// block this task for just a moment to allow other ready tasks not to starve out the watchdog.
 		vTaskDelay(1);
-	}
 
-}
-
-void vTaskRotateStepperReverse(void * pvPerameters) {
-	char *TAG = "vTaskRotateStepperReverse";
-	while(1) {
-		// Block and wait for message to unlock
-		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-		// Schedule task to wdt, so we can reset timeout periodically.
-		esp_task_wdt_add(xHandleCurtainStepperReverse);
-
-		// Rotate the stepper motor reverse.
-		// We use an interval of 360 degrees so that it has time to run until the ISR checks button state again.
-		move(StepperMotor_1, -(calcStepsForRotation(StepperMotor_1, 360)));
-
-		// Reset the wdt from this running task
-		esp_task_wdt_reset();
 		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
-		esp_task_wdt_delete(xHandleCurtainStepperReverse);
-		// Give idle task a moment to free up any resources
-		vTaskDelay(1);
+		esp_task_wdt_delete(xHandleMoveStepperReverse);
 	}
 
 }
@@ -561,7 +677,6 @@ void vTaskLEDFade( void * pvParameters) {
 
 void vTaskRTOSDebug( void * pvParameters){
 	char *TAG = "vTaskRTOSDebug";
-	
 
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);

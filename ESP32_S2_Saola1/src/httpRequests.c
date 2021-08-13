@@ -12,120 +12,164 @@
 volatile bool HTTP_ERROR = false;
 TaskHandle_t xHandleParseWebServer;
 char HTTP_RESPONSE_DATA[2048];
-bool initialized = false;
+cJSON *formSent = NULL;
+cJSON *formReceived = NULL;
+char *jsonStringBuffer = NULL;
 
-esp_http_client_handle_t client;
+esp_http_client_handle_t client;    // please note, this is a double pointer. do not set to null!
 esp_http_client_config_t config;
 
-void vInitTaskParseWebserver() {
-    ;
-    // xTaskCreate(http_parse_server_data, "http_parse_server_data", 2048, NULL, 25, &xHandleParseWebServer);
-    // assert(xHandleParseWebServer);
-}
+esp_err_t initializeHttpClient() {
+    char *TAG = "initializeHttpClient";
+    ESP_LOGD(TAG, "TASK AVAILABLE HEAP: %i", xPortGetFreeHeapSize());
+    esp_err_t err = ESP_FAIL;
 
-void temp_wrapper() {
+    config.url = WEBHOOK_URL;
+    ESP_LOGI(TAG, "setting POST url to: %s", config.url);
+    config.event_handler = http_event_handler;
+    config.method = HTTP_METHOD_POST;
 
-    if (!initialized) {
-        config.url = WEBHOOK_URL;
-        config.event_handler = http_event_handle;
-        config.method = HTTP_METHOD_POST;
-        config.keep_alive_enable = true;
+    if (client == NULL) {
+        ESP_LOGI(TAG, "initializing new http client");
         client = esp_http_client_init(&config);
-
-
-        initialized = true;
-    }
-
-}
-
-esp_err_t http_request_server_data() {
-    char *TAG = "http_request_server_data";
-    temp_wrapper();
-
-    // create buffer for HTTP request form
-    // populate form/string with neccessary body information to fetch data from web server
-    const static int bufferLength = 256;
-    char postData[bufferLength];
-    strcpy(postData, "READ_KEY=");
-    strcat(postData, READ_KEY);
-    strcat(postData, "&DeviceID=");
-    strcat(postData, LOCAL_DEVICE_ID);
-    ESP_LOGI(TAG, "Client POST Request Form - %s", postData);
-
-    // // create config struct. attach handler for events here.
-    // esp_http_client_config_t config = {
-    //     .url = WEBHOOK_URL,
-    //     .event_handler = http_event_handle,
-    //     .method = HTTP_METHOD_POST,
-    //     // .is_async = true,
-    // };
-
-    // initialize the client.
-    // esp_http_client_handle_t client = esp_http_client_init(&config);
-    esp_http_client_set_post_field(client, postData, bufferLength);
-
-    esp_err_t err = ESP_FAIL;   // initialized to null/fail 
-    // attempt to connect to the host
-    if (WIFI_CONNECTED) {
-        err = esp_http_client_perform(client);
-        // display contents and status code. 
-        ESP_LOGI(TAG, "Status = %d, content_length = %d", esp_http_client_get_status_code(client), esp_http_client_get_content_length(client));
         
-        if (err == ESP_OK) {    
-            ESP_LOGI(TAG, "Closing Http Client");
-            ESP_ERROR_CHECK(esp_http_client_close(client));
-        } else {
-            esp_http_client_close(client);
-            esp_http_client_init(&client);
+        if (client) {
+            err = ESP_OK;
         }
-        
+
+    } else {
+        err = esp_http_client_close(client);
+        client = esp_http_client_init(&config);
     }
 
-    // ESP_LOGI(TAG, "Freeing client memory");
-    // // call the cleanup method. essentially a destructor for the connected client.
-    // ESP_ERROR_CHECK(esp_http_client_cleanup(client));
-
-    // vPortFree(postData);
-    // vPortFree(&client);
-    // vPortFree(&config);
-    
     return err;
 }
 
-esp_err_t http_parse_server_data() {
-
-    char *TAG = "http_parse_server_data";
-    char *str;
+esp_err_t httpPostData(char *c) {
+    char *TAG = "httpPostData";
     esp_err_t err = ESP_FAIL;
+    ESP_LOGD(TAG, "TASK AVAILABLE HEAP: %i", xPortGetFreeHeapSize());
+    ESP_LOGI(TAG, "CREATE NEW REQUEST -- %s", c);
 
-    // configure the JSON library to use FREERTOS thread safe malloc / free methods
-    cJSON_Hooks hooks;
-    hooks.malloc_fn = pvPortMalloc;
-    hooks.free_fn = vPortFree;
-    cJSON_InitHooks(&hooks);
+    // ensure the http client is initialiazed. This is normally done upon boot.
+    if (!client) {
+        err = initializeHttpClient();
 
-    // Parse Json data from string. Note that cJSON dynamically allocates memory that must be freed later.
-    cJSON *json_data = cJSON_Parse(HTTP_RESPONSE_DATA);
-    ESP_LOGI(TAG, "HTTP_DATA_RECEIVED:");
-    // begin data validation.
-    if (json_data == cJSON_Invalid) {
-        ESP_LOGI(TAG, "WARNING: form is invalid JSON");
-        HTTP_ERROR = true;
-    } else {
-        str = cJSON_Print(json_data);
-        ESP_LOGI(TAG, "\n%s", str);
-        cJSON_free(str);
-        HTTP_ERROR = false;
-        err = ESP_OK;
+        // exit if failed to initialize the client.
+        if (err != ESP_OK) {
+            return err;
+        }
+    }
+    // set header data with content type
+    err = esp_http_client_set_header(client, "Accept", "application/json");
+    err = esp_http_client_set_header(client, "Content-Type", "application/json");
+
+    // set field data
+    err = esp_http_client_set_post_field(client, c, strlen(c));
+
+    if (WIFI_CONNECTED) {
+        err = esp_http_client_perform(client);
     }
 
+    return err;
+}
+
+esp_err_t httpFetchServerData() {
+    char *TAG = "httpFetchServerData";
+    esp_err_t err = ESP_FAIL;   // initialized to null/fail 
+
+    // taskENTER_CRITICAL(&mux);
+    if (!formSent){
+        formSent = cJSON_CreateObject();
+    } else {
+        cJSON_Delete(formSent);
+        formSent = cJSON_CreateObject();
+    }
+    cJSON_AddStringToObject(formSent, "READ_KEY", READ_KEY);
+    cJSON_AddStringToObject(formSent, "DeviceID", LOCAL_DEVICE_ID);
+
+    // parse the JSON object into string type to prepare for http client request
+    if (jsonStringBuffer) {
+        cJSON_free(jsonStringBuffer);
+        jsonStringBuffer = NULL;
+    }
+    jsonStringBuffer = cJSON_PrintUnformatted(formSent);
+    err = httpPostData(jsonStringBuffer);
+    // taskEXIT_CRITICAL(&mux);
+    // long timeStart = esp_timer_get_time();
+    // do {
+    //     err = httpPostData(jsonStringBuffer);
+    //     ESP_LOGI(TAG, "POST FAILED");
+    //     ESP_LOGI(TAG, "RETRYING PENDING POST -- %s", jsonStringBuffer);
+    //     vTaskDelay(pdMS_TO_TICKS(100));
+    //     // 3 second retry timeout
+    //     if (esp_timer_get_time() - timeStart > 3 * 1000 * 1000) {
+    //         break;
+    //     }
+    // } while (err != ESP_OK);
+
+    return err;
+}
+
+esp_err_t httpParseServerData() {
+    char *TAG = "httpParseServerData";
+    ESP_LOGD(TAG, "TASK AVAILABLE HEAP: %i", xPortGetFreeHeapSize());
+
+    // taskENTER_CRITICAL(&mux);
+    if (formReceived) {
+        cJSON_Delete(formReceived);
+        formReceived = NULL;
+    }
+    // Parse Json data from string. Note that cJSON dynamically allocates memory that must be freed later.
+    formReceived = cJSON_Parse(HTTP_RESPONSE_DATA);
+
+    ESP_LOGI(TAG, "BEGIN RESPONSE VALIDATION");
+    // begin data validation.
+    if (formReceived == cJSON_Invalid || formReceived == NULL) {
+        ESP_LOGI(TAG, "FAILED: Form receieved is invalid JSON");
+        HTTP_ERROR = true;
+        
+        if (formReceived) {
+            cJSON_Delete(formReceived);
+            formReceived = NULL;
+        }
+
+        return ESP_FAIL;
+    } else {
+        if (jsonStringBuffer) {
+            cJSON_free(jsonStringBuffer);
+            jsonStringBuffer = NULL;
+        }
+        jsonStringBuffer = cJSON_PrintUnformatted(formReceived);
+        ESP_LOGI(TAG, "%s", jsonStringBuffer);
+        HTTP_ERROR = false;
+    }
+    // taskEXIT_CRITICAL(&mux);
+
+    char *str;
     // update global macros if they match the parsed keys.
-    if (json_data != cJSON_Invalid) {
+    if (formReceived) {
 
-        if (cJSON_HasObjectItem(json_data, "MATERIAL_THICKNESS_MM")) {
+        if (cJSON_HasObjectItem(formReceived, "USERNAME")) {
 
-            // memcpy(str, cJSON_GetObjectItem(json_data, "MATERIAL_THICKNESS_MM")->valuestring, sizeof(char) * strlen(cJSON_GetObjectItem(json_data, "MATERIAL_THICKNESS_MM")->valuestring) + 1);
-            str = cJSON_GetObjectItem(json_data, "MATERIAL_THICKNESS_MM")->valuestring;
+            str = cJSON_GetObjectItem(formReceived, "USERNAME")->valuestring;
+
+            // note that strcmp returns '0' if true
+            if (strcmp(str, USERNAME) == 0) {
+                ESP_LOGI(TAG, "JSON FAILED: 'USERNAME' of request is same as local device");
+                // taskENTER_CRITICAL(&mux);
+                // free the dynamically allocated memory. 
+                // Do not forget that the print functions also may allocate arrays. Free those as well!!!
+                cJSON_Delete(formReceived);
+                formReceived = NULL;
+                // taskEXIT_CRITICAL(&mux);
+                return ESP_FAIL;
+            }
+
+        }
+
+        if (cJSON_HasObjectItem(formReceived, "MATERIAL_THICKNESS_MM")) {
+            str = cJSON_GetObjectItem(formReceived, "MATERIAL_THICKNESS_MM")->valuestring;
 
             if (strlen(str) > 0) {
                 float val = atof(str);
@@ -133,9 +177,8 @@ esp_err_t http_parse_server_data() {
             }
         }   
 
-        if (cJSON_HasObjectItem(json_data, "MOTOR_SPEED_RPM")) {
-            str = cJSON_GetObjectItem(json_data, "MOTOR_SPEED_RPM")->valuestring;
-            // memcpy(str, cJSON_GetObjectItem(json_data, "MOTOR_SPEED_RPM")->valuestring, sizeof(char) * strlen(cJSON_GetObjectItem(json_data, "MOTOR_SPEED_RPM")->valuestring) + 1);
+        if (cJSON_HasObjectItem(formReceived, "MOTOR_SPEED_RPM")) {
+            str = cJSON_GetObjectItem(formReceived, "MOTOR_SPEED_RPM")->valuestring;
 
             if (strlen(str) > 0) {
                 float val = atof(str);
@@ -147,9 +190,8 @@ esp_err_t http_parse_server_data() {
             }
         }
 
-        if (cJSON_HasObjectItem(json_data, "CURTAIN_PERCENTAGE")) {
-            str = cJSON_GetObjectItem(json_data, "CURTAIN_PERCENTAGE")->valuestring;
-            // memcpy(str, cJSON_GetObjectItem(json_data, "CURTAIN_PERCENTAGE")->valuestring, sizeof(char) * strlen(cJSON_GetObjectItem(json_data, "CURTAIN_PERCENTAGE")->valuestring) + 1);
+        if (cJSON_HasObjectItem(formReceived, "CURTAIN_PERCENTAGE")) {
+            str = cJSON_GetObjectItem(formReceived, "CURTAIN_PERCENTAGE")->valuestring;
 
             if (strlen(str) > 0) {
                 float val = atof(str);
@@ -157,16 +199,15 @@ esp_err_t http_parse_server_data() {
                 if (val >= 0 && val <= 100) {
                     CURTAIN_PERCENTAGE = val;
                     // TODO: make this account for the material thickness around the rod dynamically
-                    int length_mm = CURTAIN_LENGTH_INCH * 25.4;
-                    int circumference = 2 * M_PI * (ROD_DIAMETER_MM/2);
-                    MOTOR_POSITION_STEPS = (CURTAIN_PERCENTAGE * .01) * calcStepsForRotation(StepperMotor_1, (length_mm / circumference) * 360);
+                    // int length_mm = CURTAIN_LENGTH_INCH * 25.4;
+                    // int circumference = 2 * M_PI * (ROD_DIAMETER_MM/2);
+                    // MOTOR_POSITION_STEPS = (CURTAIN_PERCENTAGE * .01) * calcStepsForRotation(StepperMotor_1, (length_mm / circumference) * 360);
                 }
             }
         }
 
-        if (cJSON_HasObjectItem(json_data, "ROD_DIAMETER_MM")) {
-            str = cJSON_GetObjectItem(json_data, "ROD_DIAMETER_MM")->valuestring;
-            // memcpy(str, cJSON_GetObjectItem(json_data, "ROD_DIAMETER_MM")->valuestring, sizeof(char) * strlen(cJSON_GetObjectItem(json_data, "ROD_DIAMETER_MM")->valuestring) + 1);
+        if (cJSON_HasObjectItem(formReceived, "ROD_DIAMETER_MM")) {
+            str = cJSON_GetObjectItem(formReceived, "ROD_DIAMETER_MM")->valuestring;
 
             if (strlen(str) > 0) {
                 float val = atof(str);
@@ -176,10 +217,9 @@ esp_err_t http_parse_server_data() {
             }
         }
 
-        if (cJSON_HasObjectItem(json_data, "CURTAIN_LENGTH_INCH")) {
-            str = cJSON_GetObjectItem(json_data, "CURTAIN_LENGTH_INCH")->valuestring;
-            // memcpy(str, cJSON_GetObjectItem(json_data, "CURTAIN_LENGTH_INCH")->valuestring, sizeof(char) * strlen(cJSON_GetObjectItem(json_data, "CURTAIN_LENGTH_INCH")->valuestring) + 1);
-            
+        if (cJSON_HasObjectItem(formReceived, "CURTAIN_LENGTH_INCH")) {
+            str = cJSON_GetObjectItem(formReceived, "CURTAIN_LENGTH_INCH")->valuestring;
+       
             if (strlen(str) > 0) {
                 float val = atof(str);
                 if (val >= 0 && val <= 10 * 12) {     // limit max to 12" diam
@@ -188,17 +228,108 @@ esp_err_t http_parse_server_data() {
             }
         }
 
+        // taskENTER_CRITICAL(&mux);
         // free the dynamically allocated memory. 
         // Do not forget that the print functions also may allocate arrays. Free those as well!!!
-        cJSON_Delete(json_data);
+        cJSON_Delete(formReceived);
+        formReceived = NULL;
+        // taskEXIT_CRITICAL(&mux);
     }
 
-    return err;
+    ESP_LOGI(TAG, "VALIDATION COMPLETE");
+    return ESP_OK;
 }
 
-esp_err_t http_event_handle(esp_http_client_event_t *evt)
+esp_err_t httpValidateFormSubmission(char *form) {
+    char *TAG = "httpValidateSubmission";
+    ESP_LOGD(TAG, "TASK AVAILABLE HEAP: %i", xPortGetFreeHeapSize());
+    ESP_LOGI(TAG, "VALIDATING FORM DATA");
+    
+    if (formReceived) {
+        cJSON_Delete(formReceived);
+        formReceived = NULL;
+    }
+
+    // Parse Json data from string. Note that cJSON dynamically allocates memory that must be freed later.
+    formReceived = cJSON_Parse(HTTP_RESPONSE_DATA);
+
+    // begin data validation.
+    if (formSent == cJSON_Invalid || formSent == NULL) {
+        ESP_LOGI(TAG, "WARNING: input form data is invalid JSON");
+
+        if (formSent) {
+            cJSON_Delete(formSent);
+            formSent = NULL;
+        }
+
+        return ESP_FAIL;
+    }
+    if (formReceived == cJSON_Invalid || formReceived == NULL) {
+        ESP_LOGI(TAG, "WARNING: response form data is invalid JSON");
+
+        if (formReceived) {
+            cJSON_Delete(formReceived);
+            formReceived = NULL;
+        }
+
+        return ESP_FAIL;
+    }
+
+    if (formSent) {
+        if (jsonStringBuffer) {
+            cJSON_free(jsonStringBuffer);
+            jsonStringBuffer = NULL;
+        }
+        jsonStringBuffer = cJSON_PrintUnformatted(formSent);
+        ESP_LOGI(TAG, "SEND form: %s", jsonStringBuffer);
+    }
+    if (formReceived) {
+        if (jsonStringBuffer) {
+            cJSON_free(jsonStringBuffer);
+            jsonStringBuffer = NULL;
+        }
+        jsonStringBuffer = cJSON_PrintUnformatted(formReceived);
+        ESP_LOGI(TAG, "RECEIVE form: %s", jsonStringBuffer);
+    }
+
+    if (cJSON_Compare(formSent, formReceived, 1)) {
+        ESP_LOGI(TAG, "FORM VALIDATED TRUE");
+        return ESP_OK;
+    } else {
+        ESP_LOGI(TAG, "FORM VALIDATED FALSE");
+        return ESP_FAIL;
+    }
+
+    // if (json_data != cJSON_Invalid) {
+
+    //     if (cJSON_HasObjectItem(json_data, "CURTAIN_PERCENTAGE")) {
+    //         str = cJSON_GetObjectItem(json_data, "CURTAIN_PERCENTAGE")->valuestring;
+
+    //         if (strlen(str) > 0) {
+    //             float val = atof(str);
+                
+    //             if (val != CURTAIN_PERCENTAGE) {
+    //                 ESP_LOGI(TAG, "ERROR: CONFIRMATION RESPONSE DOES NOT MATCH SEND DATA!");
+    //                 err = ESP_FAIL;
+    //             }
+    //         }
+    //     }
+        
+    // }
+
+    // cJSON_Delete(json_data);
+    // cJSON_Delete(form_data);
+
+    return ESP_OK;
+}
+
+esp_err_t http_event_handler(esp_http_client_event_t *evt)
 {
-    char *TAG = "http_event_handle";
+    TaskHandle_t local_task = xTaskGetCurrentTaskHandle();
+    vTaskPrioritySet(local_task, 22);
+
+    char *TAG = "http_event_handler";
+    ESP_LOGD(TAG, "TASK AVAILABLE HEAP: %i", xPortGetFreeHeapSize());
     switch(evt->event_id) {
         case HTTP_EVENT_ERROR:
             // ESP_LOGI(TAG, "HTTP_EVENT_ERROR");
@@ -216,14 +347,15 @@ esp_err_t http_event_handle(esp_http_client_event_t *evt)
         case HTTP_EVENT_ON_DATA:
             // ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
             if (!esp_http_client_is_chunked_response(evt->client)) {
-                ESP_LOGI(TAG, "server response data: %.*s", evt->data_len, (char*)evt->data);
+                ESP_LOGI(TAG, "SERVER RESPONSE: %.*s", evt->data_len, (char*)evt->data);
                 // update the global event data so the running task can parse it after it is signaled
                 memcpy(HTTP_RESPONSE_DATA, evt->data, sizeof(char) * evt->data_len);
             }
-            // xTaskCreate((TaskFunction_t) http_parse_server_data, "http_parse_server_data", 2048, evt->data, 3, &xHandleParseWebServer);
+            // xTaskCreate((TaskFunction_t) httpParseServerData, "httpParseServerData", 2048, evt->data, 3, &xHandleParseWebServer);
             break;
         case HTTP_EVENT_ON_FINISH:
             // ESP_LOGI(TAG, "HTTP_EVENT_ON_FINISH");
+            ESP_LOGI(TAG, "Status = %d, content_length = %d", esp_http_client_get_status_code(client), esp_http_client_get_content_length(client));
             break;
         case HTTP_EVENT_DISCONNECTED:
             // ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");

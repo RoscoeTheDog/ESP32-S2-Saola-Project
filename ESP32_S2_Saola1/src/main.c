@@ -8,7 +8,6 @@
 /*
 	Tell the compiler to wrap main for C convention since most of the IDF framework in standard C but we may want to use C++ occasionally.
 */
-#define TAG "SYSTEM"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,14 +35,40 @@ extern "C" {
 	#include <sys/time.h>
 	#include <time.h>
 
+	#include <cJSON.h>
+	#include <cJSON_Utils.h>
+
     void app_main(void);
 
 #ifdef __cplusplus
 }
 #endif
 
+TaskHandle_t xHandleTest;
+
+void test(void *args) {
+
+	char *TAG = "test";
+
+	while (1) {
+		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+		esp_task_wdt_add(xHandleTest);
+		esp_task_wdt_reset();
+		esp_task_wdt_delete(xHandleTest);
+		ESP_LOGI(TAG, "TEST TASK RUNNING");
+		xTaskNotify(xHandleTest, 1, eSetValueWithoutOverwrite);
+	}
+
+}
+
 void app_main(void) {
 	nvs_flash_erase();
+
+	// configure the JSON library to use FREERTOS thread safe malloc / free methods
+    cJSON_Hooks hooks;
+    hooks.malloc_fn = pvPortMalloc;
+    hooks.free_fn = vPortFree;
+    cJSON_InitHooks(&hooks);
 
 	// esp_pm_config_esp32s2_t cfg;
 	// esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
@@ -79,6 +104,24 @@ void app_main(void) {
 
 	// status gets updated in wifi event handler
 	initialize_wifi();
+
+	// xTaskCreate(test, "test", 2048, NULL, 25, &xHandleTest);
+	// configASSERT(xHandleTest);
+
+	// while (1) {
+	// 	while (eTaskGetState(xHandleTest) != eRunning) {
+
+	// 		ESP_LOGI("main", "notifying test task");
+	// 		xTaskNotify(xHandleTest, 1, eSetValueWithOverwrite);
+
+	// 		for (int i = 0; i < 10; i++) {
+	// 			ESP_LOGI("main", "DOING STUFF IN LOOP");
+	// 		}
+	// 	}
+	// 	ESP_LOGI("main", "WHILE LOOP EXITED");
+	// 	vTaskDelay(pdMS_TO_TICKS(1000));
+	// }
+
 
 	// xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
 

@@ -2,6 +2,7 @@
 #define SETTINGS_H
 
 #include <StepperDriver.h>
+#include <freertos/FreeRTOS.h>
 
 extern volatile float CURTAIN_LENGTH_INCH;
 extern volatile float ROD_DIAMETER_MM;
@@ -19,8 +20,12 @@ extern char *WIFI_PASSWORD;
 extern char *WRITE_KEY;
 extern char *READ_KEY;
 extern char *LOCAL_DEVICE_ID;
+extern char *USERNAME;
 
+extern volatile int UPLOADING;
 extern volatile int DATETIME_SYNCED;
+
+extern portMUX_TYPE mux;
 
 // #define CURTAIN_LENGTH_INCH 59.0
 // #define ROD_DIAMETER_MM 25.4

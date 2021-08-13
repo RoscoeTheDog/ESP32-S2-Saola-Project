@@ -8,7 +8,6 @@
    to the AP with an IP? */
 static const int CONNECTED_BIT = BIT0;
 static const int ESPTOUCH_DONE_BIT = BIT1;
-char *TAG = "smartconfig_example";
 wifi_config_t wifi_config;
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
@@ -18,10 +17,11 @@ TaskHandle_t xHandleNVSConnect;
 volatile bool WIFI_CONNECTED = false;
 
 void vTaskNVSConnect() {
+    char *TAG = "vTaskNVSConnect";
 
     while (1) {
         ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-        TAG = "vTaskNVSConnect";
+    
         wifi_config_t *wifi_config = NULL;
         wifi_config = nvsReadBlob("wifi_settings", "wifi_config_t", sizeof(wifi_config_t)); // returns NULL if failed.
 
@@ -41,6 +41,8 @@ void vTaskNVSConnect() {
 }
 
 void wifiConfigNVSConnect() {
+    char *TAG = "wifiConfigNVSConnect";
+    ESP_LOGD(TAG, "TASK HEAP REMAINING: %i", xPortGetFreeHeapSize());
     wifi_config_t *wifi_config = NULL;
     wifi_config = nvsReadBlob("wifi_settings", "wifi_config_t", sizeof(wifi_config_t)); // returns NULL if failed.
     // wifi_config_t *w_new = (wifi_config_t*)malloc(sizeof(wifi_config_t));
@@ -51,8 +53,8 @@ void wifiConfigNVSConnect() {
 
     esp_err_t err = ESP_OK;
     while (wifi_config != NULL && err == ESP_OK) {
-        printf("saved wifi config found!\n");
-        printf("SSID: %s\nPASSWORD: %s\n", wifi_config->sta.ssid, wifi_config->sta.password);
+        ESP_LOGI(TAG, "Previous wifi configuration found.");
+        ESP_LOGI(TAG, "SSID: %s\nPASSWORD: %s", wifi_config->sta.ssid, wifi_config->sta.password);
         ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config));
         ESP_ERROR_CHECK(esp_wifi_connect());
         break;
@@ -61,6 +63,7 @@ void wifiConfigNVSConnect() {
 }
 
 void updateWifiConfig() {
+    char *TAG = "updateWifiConfig";
     ESP_LOGI(TAG, "Updating active wifi config...");
     memcpy(&wifi_config.sta.ssid, WIFI_SSID, sizeof(char) * strlen(WIFI_SSID) + 1);
     memcpy(&wifi_config.sta.password, WIFI_PASSWORD, sizeof(char) * strlen(WIFI_PASSWORD) + 1);
@@ -70,12 +73,9 @@ void updateWifiConfig() {
 void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
-    TAG = "event_handler";
+    char *TAG = "event_handler";
 
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        // vtasmDelete(s_wifi_event_group);
-        xTaskCreate(vTaskWifiReconnect, "vTaskWifiReconnect", 4096, NULL, 22, &xHandleWifiReconnect);
-        configASSERT(xHandleWifiReconnect);
         xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithOverwrite);
 
         // if (eTaskGetState(s_wifi_event_group) != eRunning) {
@@ -88,54 +88,44 @@ void event_handler(void* arg, esp_event_base_t event_base,
         wifiConfigNVSConnect();
 
     } else if (event_id == WIFI_EVENT_STA_CONNECTED) {
+        
         // update event bit locks
         WIFI_CONNECTED = true;
         HTTP_ERROR = false;
         xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
 
-        // disable the persistant reconnect task
-        vTaskDelete(xHandleWifiReconnect);
+        if (xHandleWifiReconnect) {
+            xTaskNotify(xHandleWifiReconnect, 0, eSetValueWithOverwrite);
+        }
 
         // begin the datetime sync service if not already
         initializeSntpUpdate();
 
-        // // wait 2 seconds to let the connection fully establish
-        // vTaskDelay(pdMS_TO_TICKS(2000));
-
-        if (xHandlePollWebServer != NULL ) {
-
-            if (eTaskGetState(xHandlePollWebServer) == eDeleted) {
-                xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 10, &xHandlePollWebServer);
-                configASSERT(xHandlePollWebServer);
-            }
-
-            if (eTaskGetState(xHandlePollWebServer) == eSuspended) {
-                vTaskResume(xHandlePollWebServer);
-                configASSERT(xHandlePollWebServer);
-            }
-
-            xTaskNotify(xHandlePollWebServer, 1, eSetValueWithOverwrite);
-
-
-        } else {
-            xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 10, &xHandlePollWebServer);
-            configASSERT(xHandlePollWebServer);
-        }
-
-        // eTaskState state = eTaskGetState(xHandlePollWebServer);
-        // if (state == eBlocked || state == eReady) {
-        
+        // Begin polling of web server to fetch new data
+        // if (xHandlePollServer) {
+        //     xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 10, &xHandlePollServer);
         // }
+        // if (xHandlePollServer) {
+        //     // if (eTaskGetState(xHandlePollServer) == eSuspended) {
+        //     //     vTaskResume(xHandlePollServer);
+        //     // }
 
+        //     xTaskNotify(xHandlePollServer, 1, eSetValueWithoutOverwrite);
+        // }
     } else if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
         ESP_LOGI(TAG, "WiFi Disconnected from ap");
         xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
-        xTaskNotify(xHandlePollWebServer, 0, eSetValueWithOverwrite);
         WIFI_CONNECTED = false;
         HTTP_ERROR = false;
-        // vTaskSuspend(xHandlePollWebServer);
-        xTaskCreate(vTaskWifiReconnect, "vTaskWifiReconnect", 4096, NULL, 22, &xHandleWifiReconnect);
-        xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithOverwrite);
+        // if (xHandlePollServer && (eTaskGetState(xHandlePollServer) == eRunning || eTaskGetState(xHandlePollServer) == eRunning)) {
+        //     xTaskNotify(xHandlePollServer, 0, eSetValueWithOverwrite);
+        // }
+        if (xHandleWifiReconnect && (eTaskGetState(xHandleWifiReconnect) == eRunning || eTaskGetState(xHandleWifiReconnect) == eRunning)) {
+            xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithOverwrite);
+        }
+
+        // xTaskCreate(vTaskWifiReconnect, "vTaskWifiReconnect", 4096, NULL, 22, &xHandleWifiReconnect);
+        // xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithOverwrite);
     
         
         // if (eTaskGetState(s_wifi_event_group) != eRunning) {
@@ -208,6 +198,7 @@ void vInitTaskSmartConfig(void * pvParameters) {
 }
 
 void vTaskSmartConfig(void * pvParameters) {
+    char *TAG = "vTaskSmartConfig";
     EventBits_t uxBits;
     // TaskHandle_t localTask = xTaskGetCurrentTaskHandle();
     // vTaskPrioritySet(localTask, 22);

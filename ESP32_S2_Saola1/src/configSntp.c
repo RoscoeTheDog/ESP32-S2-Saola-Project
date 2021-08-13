@@ -19,7 +19,6 @@ void initializeSntpUpdate() {
 	sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
 	sntp_setservername(0, "pool.ntp.org");
 	sntp_set_time_sync_notification_cb(sntpUpdateNotification);
-
 	
 	sntp_init();
 
