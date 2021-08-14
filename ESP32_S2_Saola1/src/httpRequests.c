@@ -21,7 +21,6 @@ esp_http_client_config_t config;
 
 esp_err_t initializeHttpClient() {
     char *TAG = "initializeHttpClient";
-    ESP_LOGD(TAG, "TASK AVAILABLE HEAP: %i", xPortGetFreeHeapSize());
     esp_err_t err = ESP_FAIL;
 
     config.url = WEBHOOK_URL;
@@ -30,7 +29,7 @@ esp_err_t initializeHttpClient() {
     config.method = HTTP_METHOD_POST;
 
     if (client == NULL) {
-        ESP_LOGI(TAG, "initializing new http client");
+        ESP_LOGD(TAG, "initializing new http client");
         client = esp_http_client_init(&config);
         
         if (client) {
@@ -38,8 +37,13 @@ esp_err_t initializeHttpClient() {
         }
 
     } else {
+        // we do not want any tasks to interrupt the freeing/re-init of the client object.
+        // portENTER_CRITICAL(&mux);
+        ESP_LOGD(TAG, "deinitializing http client");
         err = esp_http_client_close(client);
+        ESP_LOGD(TAG, "initializing new http client");
         client = esp_http_client_init(&config);
+        // portEXIT_CRITICAL(&mux);
     }
 
     return err;
@@ -48,8 +52,7 @@ esp_err_t initializeHttpClient() {
 esp_err_t httpPostData(char *c) {
     char *TAG = "httpPostData";
     esp_err_t err = ESP_FAIL;
-    ESP_LOGD(TAG, "TASK AVAILABLE HEAP: %i", xPortGetFreeHeapSize());
-    ESP_LOGI(TAG, "CREATE NEW REQUEST -- %s", c);
+    ESP_LOGI(TAG, "HTTP REQUEST -- %s", c);
 
     // ensure the http client is initialiazed. This is normally done upon boot.
     if (!client) {
@@ -57,6 +60,7 @@ esp_err_t httpPostData(char *c) {
 
         // exit if failed to initialize the client.
         if (err != ESP_OK) {
+            ESP_LOGI(TAG, "Failed to initialize http client. Request Dropped!");
             return err;
         }
     }
@@ -78,21 +82,24 @@ esp_err_t httpFetchServerData() {
     char *TAG = "httpFetchServerData";
     esp_err_t err = ESP_FAIL;   // initialized to null/fail 
 
-    // taskENTER_CRITICAL(&mux);
+    portENTER_CRITICAL(&mux);
     if (!formSent){
         formSent = cJSON_CreateObject();
     } else {
         cJSON_Delete(formSent);
         formSent = cJSON_CreateObject();
     }
+    portEXIT_CRITICAL(&mux);
     cJSON_AddStringToObject(formSent, "READ_KEY", READ_KEY);
     cJSON_AddStringToObject(formSent, "DeviceID", LOCAL_DEVICE_ID);
 
     // parse the JSON object into string type to prepare for http client request
+    portENTER_CRITICAL(&mux);
     if (jsonStringBuffer) {
         cJSON_free(jsonStringBuffer);
         jsonStringBuffer = NULL;
     }
+    portEXIT_CRITICAL(&mux);
     jsonStringBuffer = cJSON_PrintUnformatted(formSent);
     err = httpPostData(jsonStringBuffer);
     // taskEXIT_CRITICAL(&mux);
@@ -116,10 +123,12 @@ esp_err_t httpParseServerData() {
     ESP_LOGD(TAG, "TASK AVAILABLE HEAP: %i", xPortGetFreeHeapSize());
 
     // taskENTER_CRITICAL(&mux);
+    portENTER_CRITICAL(&mux);
     if (formReceived) {
         cJSON_Delete(formReceived);
         formReceived = NULL;
     }
+    portEXIT_CRITICAL(&mux);
     // Parse Json data from string. Note that cJSON dynamically allocates memory that must be freed later.
     formReceived = cJSON_Parse(HTTP_RESPONSE_DATA);
 
@@ -128,18 +137,21 @@ esp_err_t httpParseServerData() {
     if (formReceived == cJSON_Invalid || formReceived == NULL) {
         ESP_LOGI(TAG, "FAILED: Form receieved is invalid JSON");
         HTTP_ERROR = true;
-        
+        portENTER_CRITICAL(&mux);
         if (formReceived) {
             cJSON_Delete(formReceived);
             formReceived = NULL;
         }
+        portEXIT_CRITICAL(&mux);
 
         return ESP_FAIL;
     } else {
+        portENTER_CRITICAL(&mux);
         if (jsonStringBuffer) {
             cJSON_free(jsonStringBuffer);
             jsonStringBuffer = NULL;
         }
+        portEXIT_CRITICAL(&mux);
         jsonStringBuffer = cJSON_PrintUnformatted(formReceived);
         ESP_LOGI(TAG, "%s", jsonStringBuffer);
         HTTP_ERROR = false;
@@ -147,6 +159,7 @@ esp_err_t httpParseServerData() {
     // taskEXIT_CRITICAL(&mux);
 
     char *str;
+    esp_err_t err = ESP_OK;
     // update global macros if they match the parsed keys.
     if (formReceived) {
 
@@ -157,13 +170,13 @@ esp_err_t httpParseServerData() {
             // note that strcmp returns '0' if true
             if (strcmp(str, USERNAME) == 0) {
                 ESP_LOGI(TAG, "JSON FAILED: 'USERNAME' of request is same as local device");
-                // taskENTER_CRITICAL(&mux);
+                portENTER_CRITICAL(&mux);
                 // free the dynamically allocated memory. 
                 // Do not forget that the print functions also may allocate arrays. Free those as well!!!
                 cJSON_Delete(formReceived);
                 formReceived = NULL;
-                // taskEXIT_CRITICAL(&mux);
-                return ESP_FAIL;
+                portEXIT_CRITICAL(&mux);
+                err = ESP_FAIL;
             }
 
         }
@@ -228,16 +241,16 @@ esp_err_t httpParseServerData() {
             }
         }
 
-        // taskENTER_CRITICAL(&mux);
+        portENTER_CRITICAL(&mux);
         // free the dynamically allocated memory. 
         // Do not forget that the print functions also may allocate arrays. Free those as well!!!
         cJSON_Delete(formReceived);
         formReceived = NULL;
-        // taskEXIT_CRITICAL(&mux);
+        portEXIT_CRITICAL(&mux);
     }
 
     ESP_LOGI(TAG, "VALIDATION COMPLETE");
-    return ESP_OK;
+    return err;
 }
 
 esp_err_t httpValidateFormSubmission(char *form) {
@@ -245,10 +258,12 @@ esp_err_t httpValidateFormSubmission(char *form) {
     ESP_LOGD(TAG, "TASK AVAILABLE HEAP: %i", xPortGetFreeHeapSize());
     ESP_LOGI(TAG, "VALIDATING FORM DATA");
     
+    portENTER_CRITICAL(&mux);
     if (formReceived) {
         cJSON_Delete(formReceived);
         formReceived = NULL;
     }
+    portEXIT_CRITICAL(&mux);
 
     // Parse Json data from string. Note that cJSON dynamically allocates memory that must be freed later.
     formReceived = cJSON_Parse(HTTP_RESPONSE_DATA);
@@ -257,37 +272,45 @@ esp_err_t httpValidateFormSubmission(char *form) {
     if (formSent == cJSON_Invalid || formSent == NULL) {
         ESP_LOGI(TAG, "WARNING: input form data is invalid JSON");
 
+        portENTER_CRITICAL(&mux);
         if (formSent) {
             cJSON_Delete(formSent);
             formSent = NULL;
         }
+        portEXIT_CRITICAL(&mux);
 
         return ESP_FAIL;
     }
     if (formReceived == cJSON_Invalid || formReceived == NULL) {
         ESP_LOGI(TAG, "WARNING: response form data is invalid JSON");
 
+        portENTER_CRITICAL(&mux);
         if (formReceived) {
             cJSON_Delete(formReceived);
             formReceived = NULL;
         }
+        portEXIT_CRITICAL(&mux);
 
         return ESP_FAIL;
     }
 
     if (formSent) {
+        portENTER_CRITICAL(&mux);
         if (jsonStringBuffer) {
             cJSON_free(jsonStringBuffer);
             jsonStringBuffer = NULL;
         }
+        portEXIT_CRITICAL(&mux);
         jsonStringBuffer = cJSON_PrintUnformatted(formSent);
         ESP_LOGI(TAG, "SEND form: %s", jsonStringBuffer);
     }
     if (formReceived) {
+        portENTER_CRITICAL(&mux);
         if (jsonStringBuffer) {
             cJSON_free(jsonStringBuffer);
             jsonStringBuffer = NULL;
         }
+        portEXIT_CRITICAL(&mux);
         jsonStringBuffer = cJSON_PrintUnformatted(formReceived);
         ESP_LOGI(TAG, "RECEIVE form: %s", jsonStringBuffer);
     }

@@ -30,7 +30,7 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 		// immediately suspend motor tasks if running.
 		if (xHandleUpdateMotor != NULL && (eTaskGetState(xHandleUpdateMotor) == eRunning || eTaskGetState(xHandleUpdateMotor) == eReady) ) {
 			vTaskDelete(xHandleUpdateMotor);
-			xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 10, &xHandleUpdateMotor);
+			xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 9, &xHandleUpdateMotor);
 		}
 		
 		if (xHandleMoveStepperForward != NULL) {
@@ -61,11 +61,11 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 	if (!BTN_0_PIN_STATE && !BTN_1_PIN_STATE) {
 
 		if (xHandleMoveStepperForward && (eTaskGetState(xHandleMoveStepperForward) == eRunning || eTaskGetState(xHandleMoveStepperForward) == eReady) ) {
-			xTaskNotify(xHandleMoveStepperForward, 0, eSetValueWithOverwrite);
+			xTaskNotifyFromISR(xHandleMoveStepperForward, 0, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
 		}
 
 		if (xHandleMoveStepperReverse && (eTaskGetState(xHandleMoveStepperReverse) == eRunning || eTaskGetState(xHandleMoveStepperReverse) == eReady) ) {
-			xTaskNotify(xHandleMoveStepperReverse, 0, eSetValueWithOverwrite);
+			xTaskNotifyFromISR(xHandleMoveStepperReverse, 0, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
 		}
 
 		// if (xHandleMoveStepperForward != NULL && (eTaskGetState(xHandleMoveStepperForward) == eRunning || eTaskGetState(xHandleMoveStepperForward) == eReady) ) {

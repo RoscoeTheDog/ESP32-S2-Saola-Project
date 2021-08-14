@@ -63,11 +63,11 @@ void initializeTasks() {
 	configASSERT(xHandleSubmitLocalData);
 
 	ESP_LOGI(TAG, "initializing vTaskUpdateMotor");
-	xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 10, &xHandleUpdateMotor);
+	xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 9, &xHandleUpdateMotor);
 	configASSERT(xHandleUpdateMotor);
 
 	ESP_LOGI(TAG, "initializing vTaskPollServer");
-	xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 10, &xHandlePollServer);
+	xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 9, &xHandlePollServer);
 	configASSERT(xHandlePollServer);
 
 	ESP_LOGI(TAG, "initializing vTaskWifiPersistingTasks");
@@ -267,16 +267,15 @@ void vTaskPollServer(void * args) {
 			
 			if (WIFI_CONNECTED && DATETIME_SYNCED) { 
 			
-				ESP_LOGI(TAG, "BEGIN SERVER READ REQUEST");
 				if (httpFetchServerData() != ESP_OK) {
 					HTTP_ERROR = true;
+					initializeHttpClient();
 				} else {
 					HTTP_ERROR = false;
 				}
 				if (!HTTP_ERROR && DATETIME_SYNCED) {
 
 					if (httpParseServerData() == ESP_OK) {
-						ESP_LOGI(TAG, "SIGNALING UPDATE MOTOR");
 
 						if (xHandleUpdateMotor) {
 							xTaskNotify(xHandleUpdateMotor, 1, eSetValueWithoutOverwrite);
@@ -292,7 +291,7 @@ void vTaskPollServer(void * args) {
 		HTTP_ERROR = false;
 
 		// ESP_LOGI(TAG, "REQUEST CANCELED BY HIGHER PRIORITY TASK (xHandleSubmitLocalData)");
-		vTaskDelay(1);	
+		// vTaskDelay(1);	
 		
 		// if (xHandlePollServer) {
 		// 	xTaskNotify(xHandlePollServer, 1, eSetValueWithoutOverwrite);
@@ -386,12 +385,12 @@ void vTaskSubmitLocalData(void *args) {
 		// 	vTaskSuspend(xHandlePollServer);
 		// }
 
-		// portENTER_CRITICAL(&mux);
+		portENTER_CRITICAL(&mux);
 		if (formSent) {
 			cJSON_Delete(formSent);
 			formSent = NULL;
 		}
-		// portEXIT_CRITICAL(&mux); 
+		portEXIT_CRITICAL(&mux); 
 		formSent = cJSON_CreateObject();
 
 		cJSON_AddStringToObject(formSent, "WRITE_KEY", WRITE_KEY);
@@ -403,12 +402,12 @@ void vTaskSubmitLocalData(void *args) {
 		sprintf(buffer, "%f", CURTAIN_PERCENTAGE);
 		cJSON_AddStringToObject(formSent, "CURTAIN_PERCENTAGE", buffer);
 
-		// portENTER_CRITICAL(&mux); 
+		portENTER_CRITICAL(&mux); 
 		if (jsonStringBuffer) {
 			cJSON_free(jsonStringBuffer);
 			jsonStringBuffer = NULL;
 		}
-		// portEXIT_CRITICAL(&mux);
+		portEXIT_CRITICAL(&mux);
 		jsonStringBuffer = cJSON_PrintUnformatted(formSent);
 
 		esp_err_t err = httpPostData(jsonStringBuffer);
@@ -422,19 +421,19 @@ void vTaskSubmitLocalData(void *args) {
 		}
 		if (err == ESP_OK) {
 
-			// portENTER_CRITICAL(&mux); 
+			portENTER_CRITICAL(&mux); 
 			if (jsonStringBuffer) {
 				cJSON_free(jsonStringBuffer);
 				jsonStringBuffer = NULL;
 			}
-			// portEXIT_CRITICAL(&mux); 
+			portEXIT_CRITICAL(&mux); 
 			jsonStringBuffer = cJSON_PrintUnformatted(formSent);
-
 			ESP_LOGI(TAG, "REQUEST SUCCESSFULL -- %s", jsonStringBuffer);
 			
-			if (xHandleWifiPersistingTasks) {
-				xTaskNotify(xHandleWifiPersistingTasks, 1, eSetValueWithoutOverwrite);
-			}
+			// if (xHandleWifiPersistingTasks) {
+			// 	vTaskDelay(pdMS_TO_TICKS(5000));
+			// 	xTaskNotify(xHandleWifiPersistingTasks, 1, eSetValueWithoutOverwrite);
+			// }
 			
 			// if (xHandlePollServer && eTaskGetState(xHandlePollServer) == eSuspended) {
 			// 	// reinitialize the deleted task and notify it to resume
@@ -447,6 +446,7 @@ void vTaskSubmitLocalData(void *args) {
 			// }
 		} else {
 			ESP_LOGI(TAG, "REQUEST FAILED. RETRYING...");
+			initializeHttpClient();
 			// esp_task_wdt_reset();
 			xTaskNotify(xHandleSubmitLocalData, 1, eSetValueWithoutOverwrite);
 		}
@@ -462,7 +462,7 @@ void vTaskSubmitLocalData(void *args) {
 		
 
 
-		vTaskDelay(1);
+		// vTaskDelay(1);
 		// esp_task_wdt_reset();
 		// esp_task_wdt_delete(xHandleSubmitLocalData);
 	}
@@ -480,21 +480,20 @@ void vTaskMoveStepperForward(void * pvPerameters) {
 	while(true) {
 		// Block and wait for message to unlock
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+		// Schedule task to wdt, so we can reset timeout periodically.
+		esp_task_wdt_add(xHandleMoveStepperForward);
 
 		if (xHandleSubmitLocalData && (eTaskGetState(xHandleSubmitLocalData) == eRunning || eTaskGetState(xHandleSubmitLocalData) == eReady) ) {
 			xTaskNotify(xHandleSubmitLocalData, 0, eSetValueWithoutOverwrite);
 		}
 
-		if (xHandleWifiPersistingTasks) {
-			xTaskNotify(xHandleWifiPersistingTasks, 0, eSetValueWithoutOverwrite);
-		}
+		// if (xHandleWifiPersistingTasks) {
+		// 	xTaskNotify(xHandleWifiPersistingTasks, 0, eSetValueWithoutOverwrite);
+		// }
 
 		// if (xHandlePollServer && eTaskGetState(xHandlePollServer) != eSuspended) {
 		// 	vTaskSuspend(xHandlePollServer);
 		// }
-
-		// Schedule task to wdt, so we can reset timeout periodically.
-		esp_task_wdt_add(xHandleMoveStepperForward);
 
 		// TODO: make this account for the material thickness around the rod dynamically
 		length_mm = CURTAIN_LENGTH_INCH * 25.4;
@@ -527,7 +526,7 @@ void vTaskMoveStepperForward(void * pvPerameters) {
 		}
 
 		// block this task for just a moment to allow other ready tasks not to starve out the watchdog.
-		vTaskDelay(1);
+		// vTaskDelay(1);
 
 		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
 		esp_task_wdt_delete(xHandleMoveStepperForward);
@@ -546,15 +545,13 @@ void vTaskMoveStepperReverse(void * pvPerameters) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 		esp_task_wdt_add(xHandleMoveStepperReverse);
 
-		if (xHandleSubmitLocalData && (eTaskGetState(xHandleSubmitLocalData) == eRunning || eTaskGetState(xHandleSubmitLocalData) == eReady) ) {
-			xTaskNotify(xHandleSubmitLocalData, 0, eSetValueWithoutOverwrite);
-		}
-
 		// TODO: make this account for the material thickness around the rod dynamically
 		length_mm = CURTAIN_LENGTH_INCH * 25.4;
 		circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
 		MOTOR_STEP_LIMIT = StepperMotor_1->Config->microstepping * StepperMotor_1->Config->motor_steps * (length_mm/circumference_mm);
-
+		
+		// Reset the wdt from this running task
+		esp_task_wdt_reset();
 		portENTER_CRITICAL(&mux);
 		if (MOTOR_POSITION_STEPS > 0) {
 			// keep moving motor in intervals unless it is smaller than a single interval period
@@ -569,19 +566,9 @@ void vTaskMoveStepperReverse(void * pvPerameters) {
 		}
 		portEXIT_CRITICAL(&mux);		
 
-		// Reset the wdt from this running task
-		esp_task_wdt_reset();
-
-		if (!BTN_0_PIN_STATE && !BTN_1_PIN_STATE) {
-
-			if (xHandleSubmitLocalData) {
-				xTaskNotify(xHandleSubmitLocalData, 1, eSetValueWithOverwrite);
-			}
-
+		if (xHandleSubmitLocalData) {
+			xTaskNotify(xHandleSubmitLocalData, 1, eSetValueWithOverwrite);
 		}
-
-		// block this task for just a moment to allow other ready tasks not to starve out the watchdog.
-		vTaskDelay(1);
 
 		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
 		esp_task_wdt_delete(xHandleMoveStepperReverse);
