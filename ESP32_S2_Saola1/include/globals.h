@@ -22,8 +22,9 @@ extern char *READ_KEY;
 extern char *LOCAL_DEVICE_ID;
 extern char *USERNAME;
 
+extern volatile int SYS_SYNC;
 extern volatile int UPLOADING;
-extern volatile int DATETIME_SYNCED;
+extern volatile int DATETIME_SYNC;
 
 extern portMUX_TYPE mux;
 

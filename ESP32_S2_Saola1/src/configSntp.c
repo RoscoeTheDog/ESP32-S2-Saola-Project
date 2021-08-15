@@ -52,5 +52,5 @@ void sntpUpdateNotification() {
 	localtime_r(&now, &timeinfo);
 	strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
 	ESP_LOGI(TAG, "server updated date/time to %s PST", strftime_buf);
-	DATETIME_SYNCED = true;
+	DATETIME_SYNC = true;
 }

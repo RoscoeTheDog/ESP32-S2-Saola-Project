@@ -154,6 +154,13 @@ void vTaskUpdateMotor(void * args) {
 
 	while (1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+
+		// cancel move command if system is not synced with server.
+		if (!SYS_SYNC) {
+			xTaskNotify(xHandleUpdateMotor, 0, eSetValueWithOverwrite);
+			continue;
+		}
+
 		// TODO: optimize this code more
 		// always recalculate the assigned percentage in steps.
 		int length_mm = CURTAIN_LENGTH_INCH * 25.4;
@@ -221,7 +228,7 @@ void vTaskStatusLEDWatchdog( void *args) {
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 
-		if (WIFI_CONNECTED && !DATETIME_SYNCED) {
+		if (WIFI_CONNECTED && !DATETIME_SYNC) {
 			ESP_LOGI(TAG, "SYSTEM WAITING ON DATETIME SYNC");
 			setStatusLEDYellow();
 			vTaskDelay(pdMS_TO_TICKS(200));
@@ -262,11 +269,11 @@ void vTaskPollServer(void * args) {
 	while(true) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 		// esp_task_wdt_add(xHandlePollServer);
-		
+		ESP_LOGI(TAG, "SYS_SYNC: %i", SYS_SYNC);
 		// wrap in while loop for faster exit in event disconnect (shouldn't be needed but safety)
 		while (xHandleSubmitLocalData != NULL && eTaskGetState(xHandleSubmitLocalData) != eReady && eTaskGetState(xHandleSubmitLocalData) != eRunning) {
 			
-			if (WIFI_CONNECTED && DATETIME_SYNCED) { 
+			if (WIFI_CONNECTED && DATETIME_SYNC) { 
 			
 				if (httpFetchServerData() != ESP_OK) {
 					HTTP_ERROR = true;
@@ -274,10 +281,10 @@ void vTaskPollServer(void * args) {
 				} else {
 					HTTP_ERROR = false;
 				}
-				if (!HTTP_ERROR && DATETIME_SYNCED) {
+				if (!HTTP_ERROR && DATETIME_SYNC) {
 
 					if (httpParseServerData() == ESP_OK) {
-
+						SYS_SYNC = true;
 						if (xHandleUpdateMotor) {
 							xTaskNotify(xHandleUpdateMotor, 1, eSetValueWithoutOverwrite);
 						}
@@ -378,13 +385,12 @@ void vTaskSubmitLocalData(void *args) {
 
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-		// esp_task_wdt_add(xHandleSubmitLocalData);
 
-		// completely delete the poll web server task to prevent http client problems
-		// if (xHandlePollServer && eTaskGetState(xHandlePollServer) != eSuspended) {
-		// 	ESP_LOGI(TAG, "SUSPENDING TASK vTaskPollWebServer");
-		// 	vTaskSuspend(xHandlePollServer);
-		// }
+		// cancel request if the system is not synced with the server
+		if (!SYS_SYNC) {
+			xTaskNotify(xHandleSubmitLocalData, 0, eSetValueWithOverwrite);
+			continue;
+		}
 
 		portENTER_CRITICAL(&mux);
 		if (formSent) {
@@ -435,6 +441,11 @@ void vTaskSubmitLocalData(void *args) {
 			// 	vTaskDelay(pdMS_TO_TICKS(5000));
 			// 	xTaskNotify(xHandleWifiPersistingTasks, 1, eSetValueWithoutOverwrite);
 			// }
+			
+			if (xHandleWifiPersistingTasks) {
+				vTaskDelay(pdMS_TO_TICKS(5000));
+				vTaskResume(xHandleWifiPersistingTasks);
+			}
 			
 			// if (xHandlePollServer && eTaskGetState(xHandlePollServer) == eSuspended) {
 			// 	// reinitialize the deleted task and notify it to resume
@@ -492,9 +503,9 @@ void vTaskMoveStepperForward(void * pvPerameters) {
 		// 	xTaskNotify(xHandleWifiPersistingTasks, 0, eSetValueWithoutOverwrite);
 		// }
 
-		// if (xHandlePollServer && eTaskGetState(xHandlePollServer) != eSuspended) {
-		// 	vTaskSuspend(xHandlePollServer);
-		// }
+		if (xHandleWifiPersistingTasks && eTaskGetState(xHandleWifiPersistingTasks) != eSuspended) {
+			vTaskSuspend(xHandleWifiPersistingTasks);
+		}
 
 		// TODO: make this account for the material thickness around the rod dynamically
 		length_mm = CURTAIN_LENGTH_INCH * 25.4;
@@ -545,6 +556,10 @@ void vTaskMoveStepperReverse(void * pvPerameters) {
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 		esp_task_wdt_add(xHandleMoveStepperReverse);
+
+		if (xHandleWifiPersistingTasks && eTaskGetState(xHandleWifiPersistingTasks) != eSuspended) {
+			vTaskSuspend(xHandleWifiPersistingTasks);
+		}
 
 		// TODO: make this account for the material thickness around the rod dynamically
 		length_mm = CURTAIN_LENGTH_INCH * 25.4;

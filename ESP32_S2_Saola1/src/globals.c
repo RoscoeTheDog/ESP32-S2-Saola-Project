@@ -20,6 +20,7 @@ char *LOCAL_DEVICE_ID = "1";
 char *USERNAME = "smartblinds_1";
 
 volatile int UPLOADING = 0;
-volatile int DATETIME_SYNCED = 0;
+volatile int DATETIME_SYNC = 0;
+volatile int SYS_SYNC = 0;
 
 portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;

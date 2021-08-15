@@ -29,7 +29,7 @@ esp_err_t initializeHttpClient() {
     config.method = HTTP_METHOD_POST;
 
     if (client == NULL) {
-        ESP_LOGD(TAG, "initializing new http client");
+        ESP_LOGI(TAG, "initializing new http client");
         client = esp_http_client_init(&config);
         
         if (client) {
@@ -41,7 +41,7 @@ esp_err_t initializeHttpClient() {
         // portENTER_CRITICAL(&mux);
         ESP_LOGD(TAG, "deinitializing http client");
         err = esp_http_client_close(client);
-        ESP_LOGD(TAG, "initializing new http client");
+        ESP_LOGI(TAG, "initializing new http client");
         client = esp_http_client_init(&config);
         // portEXIT_CRITICAL(&mux);
     }
@@ -120,7 +120,6 @@ esp_err_t httpFetchServerData() {
 
 esp_err_t httpParseServerData() {
     char *TAG = "httpParseServerData";
-    ESP_LOGD(TAG, "TASK AVAILABLE HEAP: %i", xPortGetFreeHeapSize());
 
     // taskENTER_CRITICAL(&mux);
     portENTER_CRITICAL(&mux);
@@ -132,8 +131,7 @@ esp_err_t httpParseServerData() {
     // Parse Json data from string. Note that cJSON dynamically allocates memory that must be freed later.
     formReceived = cJSON_Parse(HTTP_RESPONSE_DATA);
 
-    ESP_LOGI(TAG, "BEGIN RESPONSE VALIDATION");
-    // begin data validation.
+    ESP_LOGI(TAG, "RESPONSE VALIDATION START");
     if (formReceived == cJSON_Invalid || formReceived == NULL) {
         ESP_LOGI(TAG, "FAILED: Form receieved is invalid JSON");
         HTTP_ERROR = true;
@@ -162,24 +160,28 @@ esp_err_t httpParseServerData() {
     esp_err_t err = ESP_OK;
     // update global macros if they match the parsed keys.
     if (formReceived) {
+        
+        // we do not care about device authorization if it is a cold boot, as we need to
+        // restore the last known position the device was in.
+        if (SYS_SYNC) {
+            if (cJSON_HasObjectItem(formReceived, "USERNAME")) {
+                str = cJSON_GetObjectItem(formReceived, "USERNAME")->valuestring;
 
-        if (cJSON_HasObjectItem(formReceived, "USERNAME")) {
+                // note that strcmp returns '0' if true
+                if (strcmp(str, USERNAME) == 0) {
+                    ESP_LOGI(TAG, "JSON FAILED: 'USERNAME' of request is same as local device");
+                    portENTER_CRITICAL(&mux);
+                    // free the dynamically allocated memory. 
+                    // Do not forget that the print functions also may allocate arrays. Free those as well!!!
+                    cJSON_Delete(formReceived);
+                    formReceived = NULL;
+                    portEXIT_CRITICAL(&mux);
+                    err = ESP_FAIL;
+                }
 
-            str = cJSON_GetObjectItem(formReceived, "USERNAME")->valuestring;
-
-            // note that strcmp returns '0' if true
-            if (strcmp(str, USERNAME) == 0) {
-                ESP_LOGI(TAG, "JSON FAILED: 'USERNAME' of request is same as local device");
-                portENTER_CRITICAL(&mux);
-                // free the dynamically allocated memory. 
-                // Do not forget that the print functions also may allocate arrays. Free those as well!!!
-                cJSON_Delete(formReceived);
-                formReceived = NULL;
-                portEXIT_CRITICAL(&mux);
-                err = ESP_FAIL;
             }
-
-        }
+       
+       }
 
         if (cJSON_HasObjectItem(formReceived, "MATERIAL_THICKNESS_MM")) {
             str = cJSON_GetObjectItem(formReceived, "MATERIAL_THICKNESS_MM")->valuestring;
@@ -203,22 +205,6 @@ esp_err_t httpParseServerData() {
             }
         }
 
-        if (cJSON_HasObjectItem(formReceived, "CURTAIN_PERCENTAGE")) {
-            str = cJSON_GetObjectItem(formReceived, "CURTAIN_PERCENTAGE")->valuestring;
-
-            if (strlen(str) > 0) {
-                float val = atof(str);
-
-                if (val >= 0 && val <= 100) {
-                    CURTAIN_PERCENTAGE = val;
-                    // TODO: make this account for the material thickness around the rod dynamically
-                    // int length_mm = CURTAIN_LENGTH_INCH * 25.4;
-                    // int circumference = 2 * M_PI * (ROD_DIAMETER_MM/2);
-                    // MOTOR_POSITION_STEPS = (CURTAIN_PERCENTAGE * .01) * calcStepsForRotation(StepperMotor_1, (length_mm / circumference) * 360);
-                }
-            }
-        }
-
         if (cJSON_HasObjectItem(formReceived, "ROD_DIAMETER_MM")) {
             str = cJSON_GetObjectItem(formReceived, "ROD_DIAMETER_MM")->valuestring;
 
@@ -238,6 +224,28 @@ esp_err_t httpParseServerData() {
                 if (val >= 0 && val <= 10 * 12) {     // limit max to 12" diam
                     CURTAIN_LENGTH_INCH = val;
                 }                    
+            }
+        }
+
+        // parse percentage last, as it is dependent on other parsed parameters
+        if (cJSON_HasObjectItem(formReceived, "CURTAIN_PERCENTAGE")) {
+            str = cJSON_GetObjectItem(formReceived, "CURTAIN_PERCENTAGE")->valuestring;
+
+            if (strlen(str) > 0) {
+                float val = atof(str);
+
+                if (val >= 0 && val <= 100) {
+                    CURTAIN_PERCENTAGE = val;
+
+                    // as motor's position is uninitialized at startup, we need to restore
+                    // the value by calculating the set percentage.
+                    if (!SYS_SYNC) {
+                        // TODO: make this account for the material thickness around the rod dynamically
+                        int length_mm = CURTAIN_LENGTH_INCH * 25.4;
+                        int circumference = 2 * M_PI * (ROD_DIAMETER_MM/2);
+                        MOTOR_POSITION_STEPS = (CURTAIN_PERCENTAGE * .01) * calcStepsForRotation(StepperMotor_1, (length_mm / circumference) * 360);
+                    }
+                }
             }
         }
 
