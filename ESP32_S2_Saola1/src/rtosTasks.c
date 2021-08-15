@@ -57,6 +57,7 @@ void initializeTasks() {
 	ESP_LOGI(TAG, "initializing vTaskWifiReconnect");
 	xTaskCreate(vTaskWifiReconnect, "vTaskWifiReconnect", 2048, NULL, 22, &xHandleWifiReconnect);
 	configASSERT(xHandleWifiReconnect);
+	xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithoutOverwrite);
 
 	ESP_LOGI(TAG, "initializing vTaskSubmitLocalData");
 	xTaskCreate(vTaskSubmitLocalData, "vTaskSubmitLocalData", 4096, NULL, 10, &xHandleSubmitLocalData);

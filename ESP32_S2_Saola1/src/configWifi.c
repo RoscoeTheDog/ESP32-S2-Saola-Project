@@ -94,9 +94,9 @@ void event_handler(void* arg, esp_event_base_t event_base,
         HTTP_ERROR = false;
         xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
 
-        if (xHandleWifiReconnect) {
-            xTaskNotify(xHandleWifiReconnect, 0, eSetValueWithOverwrite);
-        }
+        // if (xHandleWifiReconnect) {
+        //     xTaskNotify(xHandleWifiReconnect, 0, eSetValueWithOverwrite);
+        // }
 
         // begin the datetime sync service if not already
         initializeSntpUpdate();
@@ -120,9 +120,9 @@ void event_handler(void* arg, esp_event_base_t event_base,
         // if (xHandlePollServer && (eTaskGetState(xHandlePollServer) == eRunning || eTaskGetState(xHandlePollServer) == eRunning)) {
         //     xTaskNotify(xHandlePollServer, 0, eSetValueWithOverwrite);
         // }
-        if (xHandleWifiReconnect && (eTaskGetState(xHandleWifiReconnect) == eRunning || eTaskGetState(xHandleWifiReconnect) == eRunning)) {
-            xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithOverwrite);
-        }
+        // if (xHandleWifiReconnect) {
+        //     xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithOverwrite);
+        // }
 
         // xTaskCreate(vTaskWifiReconnect, "vTaskWifiReconnect", 4096, NULL, 22, &xHandleWifiReconnect);
         // xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithOverwrite);
