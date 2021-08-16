@@ -34,6 +34,7 @@ extern "C" {
 	#include <esp_sntp.h>
 	#include <sys/time.h>
 	#include <time.h>
+	#include <globals.h>
 
 	#include <cJSON.h>
 	#include <cJSON_Utils.h>
@@ -62,7 +63,7 @@ void test(void *args) {
 }
 
 void app_main(void) {
-	nvs_flash_erase();
+	// nvs_flash_erase();
 
 	// configure the JSON library to use FREERTOS thread safe malloc / free methods
     cJSON_Hooks hooks;
@@ -76,22 +77,31 @@ void app_main(void) {
 	// cfg.max_freq_mhz = 240;
 	// cfg.min_freq_mhz = 80;
 
-	// ESP_ERROR_CHECK(esp_pm_configure(&cfg));
-	// vInitTaskSleep();
-	// vInitTaskRTOSDebug();
-	// initialize peripherials and resources here.
-
+	/* *************initialize peripherials and resources here****************/
 	// configure gpio for peripiherials first
 	vInitGpioConfig();					// GPIO pin configuration
-	// cold start go status red asap.
+	// cold start go status red as soon as GPIO is initialized.
 	setStatusLEDRed();
 	// continue init...
 	initialize_ledc_config_0();				// LED PWM generator
 	vInitCurtainMotorConfig_0();		// Primary Motor Control	
 	initializeTimerConfig();				// Button interrupts
 
+	
 	// pause for visual indication
 	vTaskDelay(pdMS_TO_TICKS(2000));
+	if (nvsRestoreSystemState() == ESP_OK) {
+		// blink green twice if restored state sucessfully
+		for (short i = 0; i < 2; ++i) {
+			setStatusLEDGreen();
+			vTaskDelay(pdMS_TO_TICKS(100));
+			setStatusLEDRed();
+			vTaskDelay(pdMS_TO_TICKS(100));
+		}
+
+		SYS_SYNC = true;
+	}
+	vTaskDelay(pdMS_TO_TICKS(1000));
 
 	// system hardware initialized sucessfully. go status yellow
 	setStatusLEDYellow();
@@ -104,155 +114,37 @@ void app_main(void) {
 
 	// status gets updated in wifi event handler
 	initialize_wifi();
-
-	// xTaskCreate(test, "test", 2048, NULL, 25, &xHandleTest);
-	// configASSERT(xHandleTest);
-
-	// while (1) {
-	// 	while (eTaskGetState(xHandleTest) != eRunning) {
-
-	// 		ESP_LOGI("main", "notifying test task");
-	// 		xTaskNotify(xHandleTest, 1, eSetValueWithOverwrite);
-
-	// 		for (int i = 0; i < 10; i++) {
-	// 			ESP_LOGI("main", "DOING STUFF IN LOOP");
-	// 		}
-	// 	}
-	// 	ESP_LOGI("main", "WHILE LOOP EXITED");
-	// 	vTaskDelay(pdMS_TO_TICKS(1000));
+	// while (!SYS_SYNC) {
+	// 	vTaskDelay(1000);
 	// }
-
-
-	// xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
-
 	// while (1) {
 
-	// 	// if (xHandleTask1 != NULL && eTaskGetState(xHandleTask1) == eSuspended) {
-	// 	// 	printf("Resuming Task\n");
-	// 	// 	vTaskResume(xHandleTask1);
-	// 	// }
+	// 	nvsWriteBlob("init", "MOTOR_STEPS", &MOTOR_POSITION_STEPS, sizeof(long));
+	// 	long foo = nvsReadBlob("init", "MOTOR_STEPS", sizeof(long));
+	// 	ESP_LOGI("init", "MOTOR_POSITION_STEPS: %li", foo);
 
-	// 	// if (xHandleTask1 == NULL) {
-			
-	// 		// if (eTaskGetState(xHandleTask1) == eDeleted) {
-	// 			printf("Creating Task\n");
-	// 			xTaskCreate(task_1, "task_1", 2048, NULL, 25, &xHandleTask1);
-	// 		// }
-			
-	// 	// }
-	
-	// 	// if (xHandleTask1 != NULL) {
-	// 		// if (eTaskGetState(xHandleTask1) == eDeleted) {
-	// 			// printf("Creating Task\n");
-	// 			// // vTaskResume(xHandleTask1);
-	// 			// xTaskCreate(task_1, "task_1", 2048, NULL, 25, &xHandleTask1);
-	// 			// assert(xHandleTask1);
-	// 		// }
-	// 	// } 
-	// 	// else {
-	// 	// 	printf("Creating Task\n");
-	// 	// 	vTaskResume(xHandleTask1);
-	// 	// 	// xTaskCreate(task_1, "task_1", 2048, NULL, 25, xHandleTask1);
-	// 	// 	configASSERT(xHandleTask1);
-	// 	// }
+	// 	nvsWriteBlob("init", "CURTAIN_PERC", &CURTAIN_PERCENTAGE, sizeof(float));
+	// 	float foo1;
+	// 	memcpy(&foo1, nvsReadBlob("init", "CURTAIN_PERC", sizeof(float)), sizeof(float));
+	// 	ESP_LOGI("init", "CURTAIN_PERCENTAGE: %f", foo1);
 
-		
-	// 	// if (eTaskGetState(xHandleTask1) == eReady) {
-	// 		printf("Notifying Task\n");
-	// 		xTaskNotify(xHandleTask1, 1, eSetValueWithoutOverwrite);
-	// 	// }
-	// 	// // vTaskDelay(pdMS_TO_TICKS(100));
-	// 	// // printf("Suspending Task\n");
-	// 	// // vTaskSuspend(xHandleTask1);
-	// 	// // vTaskDelay(pdMS_TO_TICKS(100));
-	// 	// // printf("Resuming Task\n");
-	// 	// // vTaskResume(xHandleTask1);
+	// 	nvsWriteBlob("init", "CURTAIN_LEN", &CURTAIN_LENGTH_INCH, sizeof(float));
+	// 	memcpy(&foo1, nvsReadBlob("init", "CURTAIN_LEN", sizeof(float)), sizeof(float));
+	// 	ESP_LOGI("init", "CURTAIN_LENGTH_INCH: %f", foo1);
 
+	// 	nvsWriteBlob("init", "MOTOR_SPEED", &MOTOR_SPEED_RPM, sizeof(int));
+	// 	memcpy(&foo, nvsReadBlob("init", "MOTOR_SPEED", sizeof(int)), sizeof(int));
+	// 	ESP_LOGI("init", "MOTOR_SPEED: %li", foo);
 
-	// 	vTaskDelay(pdMS_TO_TICKS(5));
-	// 	// if (xHandleTask1 != NULL) {
-	// 	// 	printf("Deleting Task\n");
-	// 	// 	vTaskDelete(xHandleTask1);
-	// 	// }
+	// 	// nvsWriteBlob("init", "CURTAIN_LEN", &CURTAIN_LENGTH_INCH, sizeof(float));
+	// 	// float foo2 = nvsReadBlob("init", "CURTAIN_LEN", sizeof(float));
+	// 	// ESP_LOGI("init", "CURTAIN_LENGTH_INCH: %f", foo);
 
-	// 	printf("Suspending task\n");
-	// 	vTaskDelete(xHandleTask1);
-		
-	// 	// xTaskNotify(xHandleTask1, 0, eSetValueWithOverwrite);
+	// 	// nvsWriteBlob("init", "MOTOR_SPEED", &MOTOR_SPEED_RPM, sizeof(int));
+	// 	// int foo3 = nvsReadBlob("init", "MOTOR_SPEED", sizeof(int));
 
-	// 	vTaskDelay(pdMS_TO_TICKS(3000));
-
+	// 	vTaskDelay(2000);
 	// }
-
-
-	
-
-	// nvsWriteBlob("wifi_settings", "wifi_ssid", "wuntangLAN", sizeof(char) * 32);
-	// char *c = malloc(sizeof(char) * 32);
-	// memcpy(c, nvsReadBlob("wifi_settings", "wifi_ssid", sizeof(char) * 32), sizeof(char) * 32);
-	// // char *c = nvsReadBlob("wifi_settings", "wifi_ssid", sizeof(char) * 11);
-	// printf("%s\n", c); 
-
-	// initialize the NVS.
-    // esp_err_t err = nvs_flash_init();
-    // if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    //     // NVS partition was truncated and needs to be erased
-    //     // Retry nvs_flash_init
-    //     ESP_ERROR_CHECK(nvs_flash_erase());
-    //     err = nvs_flash_init();
-    // }
-    // ESP_ERROR_CHECK( err );
-
-	// wifi_config_t foo = {
-	// 	.sta = {.ssid = "wutangLan",
-	// 			.password = "test"},
-	// };
-	
-	// nvsWriteBlob("wifi_settings", "wifi_config_t", &foo, sizeof(wifi_config_t) );
-
-	// wifi_config_t *bar = NULL;
-	// bar = nvsReadBlob("wifi_settings", "wifi_config_t", sizeof(wifi_config_t));
-	
-	// printf("bar: %s\n", bar->sta.ssid);
-
-	// declare a nvs handler and our wifi config to restore.
-	// nvs_handle_t storage_handle;
-	// void *nvs_data = (void*)malloc(sizeof(void*));
-	// size_t nvs_buffer = sizeof(a);
-	// // open the wifi_settings namespace with read/write permissions, passing in the handler.
-	// ESP_ERROR_CHECK(nvs_open("wifi_settings", NVS_READWRITE, &storage_handle));
-	// ESP_ERROR_CHECK(nvs_get_blob(storage_handle, "wifi_config_t", &nvs_data, &nvs_buffer));
-	// printf("value: %i\n", (int)nvs_data);
-	// size_t t = sizeof(int);
-	// wifi_config_t *b = (wifi_config_t*)nvsReadBlob("wifi_settings", "wifi_config_t", sizeof(wifi_config_t));
-
-	// wifi_config_t bar = {
-	// 	.sta = {
-	// 		.ssid = "wutanglan",
-	// 	}
-	// };
-	// printf("value b: %s\n", bar.sta.ssid);
-	// printf("value b: %s\n", b->sta.ssid);
-
-	// printf("stop");
-	// if (b == NULL) {
-	// 	printf("b is null\n");
-	// } else {
-	// 	printf("%i\n", *b);	
-	// }
-
-
-	// xTaskNotify(xHandleCloseCurtains, 1, eSetValueWithOverwrite);
-
-	// // rotate the motor 360 degrees then wait for 3 seconds.
-	// while (1) {
-	// 	rotate(StepperMotor_1, 360);
-	// 	vTaskDelay(pdMS_TO_TICKS(3 * 1000));
-	// }
-
-	// xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
-	// printf("heap_caps_get_free_size: %u\n", heap_caps_get_free_size(MALLOC_CAP_8BIT));
-	// printf("xPortGetFreeHeapSize: %u\n\n", xPortGetFreeHeapSize());
 
 }
 

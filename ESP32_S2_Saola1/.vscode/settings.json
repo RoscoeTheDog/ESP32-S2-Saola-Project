@@ -101,6 +101,8 @@
 		"esp_log.h": "c",
 		"httprequests.h": "c",
 		"configsntp.h": "c",
-		"globals.h": "c"
+		"globals.h": "c",
+		"confignvs.h": "c",
+		"nvs_flash.h": "c"
 	}
 }

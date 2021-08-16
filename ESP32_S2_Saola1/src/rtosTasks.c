@@ -146,9 +146,9 @@ void vTaskWifiReconnect(void *args) {
 	}
 }
 
+// updates the stepper to the set % of length periodically
 void vTaskUpdateMotor(void * args) {
 	char *TAG = "vTaskUpdateMotor";
-	long motor_position_steps_prev = MOTOR_POSITION_STEPS;
 	long steps_remaining = 0;
 	long distance = 0;
 
@@ -172,52 +172,27 @@ void vTaskUpdateMotor(void * args) {
 		steps_remaining = motor_percentage_steps - MOTOR_POSITION_STEPS;
 		long steps_to_travel = abs(steps_remaining);
 
-		// ABS DISTANCE (steps) / per SECOND
-		if (steps_to_travel / StepperConfig_1->microstepping * StepperConfig_1->rpm * 60 * 360 > CONFIG_TASK_WDT_TIMEOUT_S) {
-			// there may be some associated overhead from calling and using the stepper API.
-			// take 90% of the total travel distance in a single action instead to avoid tripping the task wdt by accident
-			long move_interval = (steps_remaining / (CONFIG_TASK_WDT_TIMEOUT_S + 1) );
-			if (move_interval > 4) {
-				move_interval /= 4;
-			}
-			while (abs(steps_remaining)) {
-				
-				if (abs(steps_remaining) > abs(move_interval)) {
-					// portENTER_CRITICAL(&mux);
-					move(StepperMotor_1, move_interval);
-					MOTOR_POSITION_STEPS += move_interval;
-					// portEXIT_CRITICAL(&mux);
-					steps_remaining -= move_interval;
-				} else {
-					// portENTER_CRITICAL(&mux);
-					move(StepperMotor_1, steps_remaining);
-					MOTOR_POSITION_STEPS += steps_remaining;
-					// portEXIT_CRITICAL(&mux);
-					steps_remaining = 0;
-				}
-
-				vTaskDelay(1);
-			}
-
+		long move_interval = 0;
+		if(steps_remaining > 0) {
+			move_interval = calcStepsForRotation(StepperMotor_1, 1);
 		} else {
-			move(StepperMotor_1, steps_remaining);
-			MOTOR_POSITION_STEPS += steps_remaining;
-			steps_remaining = 0;
+			move_interval = calcStepsForRotation(StepperMotor_1, -1);
 		}
-		
-		// update value of last traveled
-		motor_position_steps_prev = MOTOR_POSITION_STEPS;
-		
-		// TODO: make this account for the material thickness around the rod dynamically
-		// int length_mm = CURTAIN_LENGTH_INCH * 25.4;
-		// int circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
-		// update globals (motor_position_steps / maximum_step_length)
-		// CURTAIN_PERCENTAGE = MOTOR_POSITION_STEPS / (float)calcStepsForRotation(StepperMotor_1, (length_mm / circumference_mm) * 360);
-		// ESP_LOGI(TAG, "CURTAIN_PERCENTAGE: %f", CURTAIN_PERCENTAGE);
-		// just to make things more readable.
-		// int curtain_length_mm = CURTAIN_LENGTH_INCH * 25.4;
-		// int circumference_mm = 2 * M_PI * ((CURTAIN_LENGTH_INCH * 25.4) / 2) + MATERIAL_THICKNESS_MM)
-		// (MATERIAL_THICKNESS_MM * (CURTAIN_LENGTH_INCH * 25.4) / (2 * M_PI * (ROD_DIAMETER_MM / 2) ) 
+
+		while (abs(steps_remaining)) {
+			// enter a critical section to prevent losing track of steps if task is interrupted.
+			portENTER_CRITICAL(&mux);
+			if (abs(steps_remaining) > abs(move_interval)) {
+				move(StepperMotor_1, move_interval);
+				MOTOR_POSITION_STEPS += move_interval;
+				steps_remaining -= move_interval;
+			} else {
+				move(StepperMotor_1, steps_remaining);
+				MOTOR_POSITION_STEPS += steps_remaining;
+				steps_remaining = 0;
+			}
+			portEXIT_CRITICAL(&mux);
+		}
 		
 	}
 
@@ -225,6 +200,7 @@ void vTaskUpdateMotor(void * args) {
 
 void vTaskStatusLEDWatchdog( void *args) {
 	char *TAG = "vTaskStatusLEDWatchdog";
+	short num_blinks;
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 
@@ -236,14 +212,15 @@ void vTaskStatusLEDWatchdog( void *args) {
 		}
 		if (WIFI_CONNECTED && HTTP_ERROR) {
 			ESP_LOGI(TAG, "SYSTEM WAITING ON SERVER READ HTTP_ERROR");
-			setStatusLEDYellow();
-			vTaskDelay(pdMS_TO_TICKS(100));
-			setStatusLEDBlue();
-			vTaskDelay(pdMS_TO_TICKS(100));
+			num_blinks = 2;
 
-			setStatusLEDYellow();
-			vTaskDelay(pdMS_TO_TICKS(100));
-			setStatusLEDBlue();
+			for (short i = 0; i < num_blinks; ++i) {
+				setStatusLEDYellow();
+				vTaskDelay(pdMS_TO_TICKS(100));
+				setStatusLEDBlue();
+				vTaskDelay(pdMS_TO_TICKS(100));
+			}
+
 		}
 		if (WIFI_CONNECTED && UPLOADING) {
 			ESP_LOGI(TAG, "SYSTEM UPLOAD IN PROGRESS");
@@ -268,8 +245,6 @@ void vTaskPollServer(void * args) {
 
 	while(true) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-		// esp_task_wdt_add(xHandlePollServer);
-		ESP_LOGI(TAG, "SYS_SYNC: %i", SYS_SYNC);
 		// wrap in while loop for faster exit in event disconnect (shouldn't be needed but safety)
 		while (xHandleSubmitLocalData != NULL && eTaskGetState(xHandleSubmitLocalData) != eReady && eTaskGetState(xHandleSubmitLocalData) != eRunning) {
 			
@@ -286,7 +261,13 @@ void vTaskPollServer(void * args) {
 					if (httpParseServerData() == ESP_OK) {
 						SYS_SYNC = true;
 						if (xHandleUpdateMotor) {
+							portENTER_CRITICAL(&mux);
+							vTaskDelete(xHandleUpdateMotor);
+							xHandleUpdateMotor = NULL;
+							xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 9, &xHandleUpdateMotor);
+							portEXIT_CRITICAL(&mux);
 							xTaskNotify(xHandleUpdateMotor, 1, eSetValueWithoutOverwrite);
+							
 						}
 					}
 					
@@ -385,6 +366,10 @@ void vTaskSubmitLocalData(void *args) {
 
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+
+		// if notified of a local move update, then update the local nvs values as well.
+		nvsWriteBlob("init", "MOTOR_STEPS", &MOTOR_POSITION_STEPS, sizeof(long));
+		nvsWriteBlob("init", "CURTAIN_PERC", &CURTAIN_PERCENTAGE, sizeof(float));
 
 		// cancel request if the system is not synced with the server
 		if (!SYS_SYNC) {

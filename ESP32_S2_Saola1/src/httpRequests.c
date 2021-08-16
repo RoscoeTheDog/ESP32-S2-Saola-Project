@@ -189,6 +189,7 @@ esp_err_t httpParseServerData() {
             if (strlen(str) > 0) {
                 float val = atof(str);
                 MATERIAL_THICKNESS_MM = val;
+                nvsWriteBlob("init", "MATERIAL_THICK", &MATERIAL_THICKNESS_MM, sizeof(float));
             }
         }   
 
@@ -200,6 +201,7 @@ esp_err_t httpParseServerData() {
 
                 if (val >= 10 && val <= 400) {
                     MOTOR_SPEED_RPM = val;
+                    nvsWriteBlob("init", "MOTOR_SPEED", &MOTOR_SPEED_RPM, sizeof(int));
                     setStepperRPM(StepperMotor_1, MOTOR_SPEED_RPM);
                 }
             }
@@ -212,6 +214,7 @@ esp_err_t httpParseServerData() {
                 float val = atof(str);
                 if (val >= 0 && val <= 25.4 * 12) {     // limit max to 12" diam
                     ROD_DIAMETER_MM = val;
+                    nvsWriteBlob("init", "ROD_DIAMETER", &ROD_DIAMETER_MM, sizeof(float));
                 }                    
             }
         }
@@ -223,6 +226,7 @@ esp_err_t httpParseServerData() {
                 float val = atof(str);
                 if (val >= 0 && val <= 10 * 12) {     // limit max to 12" diam
                     CURTAIN_LENGTH_INCH = val;
+                    nvsWriteBlob("init", "CURTAIN_LEN", &CURTAIN_LENGTH_INCH, sizeof(float));
                 }                    
             }
         }
@@ -236,6 +240,7 @@ esp_err_t httpParseServerData() {
 
                 if (val >= 0 && val <= 100) {
                     CURTAIN_PERCENTAGE = val;
+                    nvsWriteBlob("init", "CURTAIN_PERC", &CURTAIN_PERCENTAGE, sizeof(float));
 
                     // as motor's position is uninitialized at startup, we need to restore
                     // the value by calculating the set percentage.
