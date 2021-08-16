@@ -47,6 +47,7 @@ extern TaskHandle_t xHandleHttpRequestServerData;
 extern TaskHandle_t xHandleUpdateMotor;
 extern TaskHandle_t xHandleSubmitLocalData;
 extern TaskHandle_t xHandleWifiPersistingTasks;
+extern TaskHandle_t xHandleSmartConfig;
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 extern EventGroupHandle_t s_wifi_event_group;

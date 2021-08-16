@@ -43,7 +43,7 @@ extern void vTaskSmartConfig(void * pvParameters);
 
 extern void wifi_init_softtap(void);
 
-extern void initialize_wifi(void);
+extern void initializeWifi(void);
 
 extern void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
 
