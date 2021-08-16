@@ -98,6 +98,11 @@
 		"err.h": "c",
 		"esp_http_client.h": "c",
 		"string.h": "c",
-		"esp_log.h": "c"
+		"esp_log.h": "c",
+		"httprequests.h": "c",
+		"configsntp.h": "c",
+		"globals.h": "c",
+		"confignvs.h": "c",
+		"nvs_flash.h": "c"
 	}
 }

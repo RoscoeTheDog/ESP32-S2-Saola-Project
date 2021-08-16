@@ -2,11 +2,43 @@
 
 int volatile LEDC_CHANNEL_0_DUTY = 0;
 
+void setStatusLEDOff() {
+	gpio_set_level(RGB_PIN_RED, 0);
+	gpio_set_level(RGB_PIN_GREEN, 0);
+	gpio_set_level(RGB_PIN_BLUE, 0);
+}
+
+void setStatusLEDRed() {
+	gpio_set_level(RGB_PIN_RED, 0);
+	gpio_set_level(RGB_PIN_GREEN, 1);
+	gpio_set_level(RGB_PIN_BLUE, 1);
+}
+
+void setStatusLEDYellow() {
+	gpio_set_level(RGB_PIN_RED, 0);
+	gpio_set_level(RGB_PIN_GREEN, 0);
+	gpio_set_level(RGB_PIN_BLUE, 1);
+}
+
+void setStatusLEDGreen() {
+	gpio_set_level(RGB_PIN_RED, 1);
+	gpio_set_level(RGB_PIN_GREEN, 0);
+	gpio_set_level(RGB_PIN_BLUE, 1);
+}
+
+void setStatusLEDBlue() {
+	gpio_set_level(RGB_PIN_RED, 1);
+	gpio_set_level(RGB_PIN_GREEN, 1);
+	gpio_set_level(RGB_PIN_BLUE, 0);
+}
+
 inline int xGetDutyResolutionMax() {
 	return (pow(2, LEDC_CHANNEL_0_DUTY_BITS) - 1);
 }
 
-void vInitLedcConfig_0( void ) {
+void initialize_ledc_config_0( void ) {
+	char *TAG = "initialize_ledc_config_0";
+
 	// config ledc peripherials and channels here.
 	// Note: when needing to reference a channel, use the appropriate C macros instead of the direct objects.
 	ledc_timer_config_t ledc_timer_conf_0;
@@ -29,9 +61,9 @@ void vInitLedcConfig_0( void ) {
 	ledc_timer_config(&ledc_timer_conf_0);
 	ledc_channel_config(&ledc_channel_conf_0);
 
-	printf("%s %i\n", "LEDC FREQUENCY: ", LEDC_TIMER_0_FREQUENCY);
-	printf("%s %i\n", "LEDC BIT RESOLUTION: ", LEDC_CHANNEL_0_DUTY_BITS);
-	printf("%s %i\n", "LEDC BIT INTEGER MAX: ", LEDC_CHANNEL_0_DUTY_MAX);
+	ESP_LOGI(TAG, "%s %i", "LEDC FREQUENCY: ", LEDC_TIMER_0_FREQUENCY);
+	ESP_LOGI(TAG, "%s %i", "LEDC BIT RESOLUTION: ", LEDC_CHANNEL_0_DUTY_BITS);
+	ESP_LOGI(TAG, "%s %i", "LEDC BIT INTEGER MAX: ", LEDC_CHANNEL_0_DUTY_MAX);
 
 	// ledc_set_duty_with_hpoint(LEDC_LOW_SPEED_MODE, LEDC_CHANNEL_0, 2047, 0);
 	// ledc_set_duty_and_update

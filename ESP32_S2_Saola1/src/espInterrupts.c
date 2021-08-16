@@ -20,38 +20,84 @@ void updateButtonsState() {
 // IRAM_ATTR flag tells the compiler to keep it in internal memory rather than flash. It is much faster this way.
 // *args are not neccessary, but can be used to pass in an object with multiple arguments.
 extern inline bool IRAM_ATTR xISR_button_0(void * args) {
-
+	char *TAG = "xISR_button_0";
 	// Poll the buttons for any changes.
 	updateButtonsState();
 
 	if (BTN_0_PIN_STATE){
-		// TODO: test this code on esp32 not S2 version and use hardware on ledc peripherial.
+		setLEDHigh();
+
+		// immediately suspend motor tasks if running.
+		if (xHandleUpdateMotor != NULL && (eTaskGetState(xHandleUpdateMotor) == eRunning || eTaskGetState(xHandleUpdateMotor) == eReady) ) {
+			nvsWriteBlob("init", "MOTOR_STEPS", &MOTOR_POSITION_STEPS, sizeof(long));
+			vTaskDelete(xHandleUpdateMotor);
+			xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 9, &xHandleUpdateMotor);
+		}
 		
-		// the low-speed software based peripherial on esp32-s2 seems to not multiplex while async tasks are running (cpu starved?)
-		// if (LEDC_CHANNEL_0_DUTY < 2047) {
-			// Update the duty cycle of the LED PWM
-			setLEDHigh();
-		// }
-		// Notify task to rotate the motor. Incriment by two in case it finishes before the buttons state is updated.
-		xTaskNotifyFromISR(xHandleCurtainStepperForward, 1, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+		if (xHandleMoveStepperForward != NULL) {
+			// Notify task to rotate the motor. Incriment by two in case it finishes before the buttons state is updated.
+			xTaskNotifyFromISR(xHandleMoveStepperForward, 1, eIncrement, &xHigherPriorityTaskWoken);
+		}
+		
 	}
 
 	// TODO: Button 2
 	if (BTN_1_PIN_STATE) {
 		// Update the duty cycle of the LED PWM
 		setLEDHigh();
-		// Notify task to rotate the motor. Incriment by two in case it finishes before the buttons state is updated.
-		xTaskNotifyFromISR(xHandleCurtainStepperReverse, 1, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+
+		// immediately suspend motor tasks if running.
+		if (xHandleUpdateMotor != NULL && (eTaskGetState(xHandleUpdateMotor) == eRunning || eTaskGetState(xHandleUpdateMotor) == eReady) ) {
+			vTaskDelete(xHandleUpdateMotor);
+			xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 10, &xHandleUpdateMotor);
+		}
+
+		if (xHandleMoveStepperReverse != NULL) {
+			// Notify task to rotate the motor. Incriment by two in case it finishes before the buttons state is updated.
+			xTaskNotifyFromISR(xHandleMoveStepperReverse, 1, eIncrement, &xHigherPriorityTaskWoken);
+		}
 	}
 
 	// When both buttons are released...
 	if (!BTN_0_PIN_STATE && !BTN_1_PIN_STATE) {
 
-		// Check if any prioritized tasks are running.
-		if (eTaskGetState(xHandleCloseCurtains) != eRunning) {
-			// Immediate stop stepper from running tasks.
-			stop(StepperMotor_1);	
+		if (xHandleMoveStepperForward && (eTaskGetState(xHandleMoveStepperForward) == eRunning || eTaskGetState(xHandleMoveStepperForward) == eReady) ) {
+			xTaskNotifyFromISR(xHandleMoveStepperForward, 0, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
 		}
+
+		if (xHandleMoveStepperReverse && (eTaskGetState(xHandleMoveStepperReverse) == eRunning || eTaskGetState(xHandleMoveStepperReverse) == eReady) ) {
+			xTaskNotifyFromISR(xHandleMoveStepperReverse, 0, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+		}
+
+		// if (xHandleMoveStepperForward != NULL && (eTaskGetState(xHandleMoveStepperForward) == eRunning || eTaskGetState(xHandleMoveStepperForward) == eReady) ) {
+		// 	// clear whatever counts remain on the running forward/reverse tasks
+		// 	// xTaskNotify(xHandleMoveStepperForward, 1, eSetValueWithOverwrite);
+		// 	stop(StepperMotor_1);
+		// }
+
+
+		// if (xHandleMoveStepperReverse != NULL && (eTaskGetState(xHandleMoveStepperReverse) == eRunning || eTaskGetState(xHandleMoveStepperReverse) == eReady) ) {
+		// 	// clear whatever counts remain on the running forward/reverse tasks
+		// 	xTaskNotify(xHandleMoveStepperReverse, 1, eSetValueWithOverwrite);
+		// }
+
+		// if (xHandlePollServer == NULL) {
+		// 	xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 10, &xHandlePollServer);
+		// 	xTaskNotify(xHandlePollServer, 1, eSetValueWithOverwrite);
+		// 	configASSERT(xHandlePollServer);
+		// }
+
+		// if (xHandlePollServer) {
+		// 	// vTaskDelete(xHandlePollServer);
+		// 	xTaskNotify(xHandlePollServer, 1, eSetValueWithoutOverwrite);
+		// }
+
+		// Check if any prioritized tasks are running.
+		// if (eTaskGetState(xHandleCloseCurtains) != eRunning && eTaskGetState(xHandlePollServer) != eRunning) {
+		// 	// Immediate stop stepper from running tasks.
+		// 	// stop(StepperMotor_1);	
+		// 	;
+		// }
 
 		// See if LED is on/off
 		if (getLEDState()) {

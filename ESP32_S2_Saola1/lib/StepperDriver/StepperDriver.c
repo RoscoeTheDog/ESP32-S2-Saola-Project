@@ -397,6 +397,7 @@ unsigned getTimeForMove(StepperHandle_t *StepperHandle, long long steps){
     return round(t);
 }
 
+// calculates an absolute travel for a given degree rotation
 inline long long calcStepsForRotation(StepperHandle_t *StepperHandle, short deg){
 	// validate pointer
 	assert(StepperHandle != NULL);

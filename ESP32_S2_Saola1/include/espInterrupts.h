@@ -8,6 +8,10 @@
 #include <configGpio.h>
 #include <StepperDriver.h>
 #include <configSteppers.h>
+#include <httpRequests.h>
+
+extern volatile bool BTN_0_PIN_STATE;
+extern volatile bool BTN_1_PIN_STATE;
 
 /*
 	If you called FreeRTOS functions in callback, you need to return true or false based on the retrun value of argument pxHigherPriorityTaskWoken. 

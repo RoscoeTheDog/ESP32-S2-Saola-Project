@@ -3,6 +3,7 @@
 
 #include <StepperDriver.h>
 #include <configGpio.h>
+#include <globals.h>
 
 extern StepperHandle_t *StepperMotor_1;
 extern StepperConfig_t *StepperConfig_1;
