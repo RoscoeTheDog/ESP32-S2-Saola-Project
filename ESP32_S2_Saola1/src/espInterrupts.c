@@ -48,8 +48,9 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 
 		// immediately suspend motor tasks if running.
 		if (xHandleUpdateMotor != NULL && (eTaskGetState(xHandleUpdateMotor) == eRunning || eTaskGetState(xHandleUpdateMotor) == eReady) ) {
+			nvsWriteBlob("init", "MOTOR_STEPS", &MOTOR_POSITION_STEPS, sizeof(long));
 			vTaskDelete(xHandleUpdateMotor);
-			xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 10, &xHandleUpdateMotor);
+			xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 9, &xHandleUpdateMotor);
 		}
 
 		if (xHandleMoveStepperReverse != NULL) {

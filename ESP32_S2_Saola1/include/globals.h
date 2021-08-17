@@ -3,6 +3,8 @@
 
 #include <StepperDriver.h>
 #include <freertos/FreeRTOS.h>
+#include <stdio.h>
+#include <string.h>
 
 extern volatile float CURTAIN_LENGTH_INCH;
 extern volatile float ROD_DIAMETER_MM;
@@ -15,8 +17,8 @@ extern volatile float MATERIAL_THICKNESS_MM;
 extern char* WEBHOOK_URL;
 extern char *LOCAL_SERVER_ADDRESS;
 extern char *REMOTE_SERVER_ADDRESS;
-extern char *WIFI_SSID;
-extern char *WIFI_PASSWORD;
+char WIFI_SSID[32];
+char WIFI_PASSWORD[64];
 extern char *WRITE_KEY;
 extern char *READ_KEY;
 extern char *LOCAL_DEVICE_ID;

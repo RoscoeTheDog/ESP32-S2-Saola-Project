@@ -23,6 +23,7 @@ TaskHandle_t xHandleWifiReconnect = NULL;
 TaskHandle_t xHandleHttpRequestServerData = NULL;
 TaskHandle_t xHandleSubmitLocalData = NULL;
 TaskHandle_t xHandleWifiPersistingTasks = NULL;
+TaskHandle_t xHandleSmartConfig = NULL;
 
 void initializeTasks() {
 	char *TAG = "initializeTasks";
@@ -100,8 +101,8 @@ void vTaskWifiPersistingTasks(void *args) {
 
 void vTaskWifiReconnect(void *args) {
 	char *TAG = "vTaskWifiReconnect";
-	memcpy(wifi_config.sta.ssid, WIFI_SSID, sizeof(char) * strlen(WIFI_SSID) + 1);
-	memcpy(wifi_config.sta.password, WIFI_PASSWORD, sizeof(char) * strlen(WIFI_PASSWORD) + 1);
+	memcpy(wifi_config.sta.ssid, WIFI_SSID, sizeof(char) * 64);
+	memcpy(wifi_config.sta.password, WIFI_PASSWORD, sizeof(char) * 32);
 	esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
 
 	while(1) {
@@ -109,18 +110,11 @@ void vTaskWifiReconnect(void *args) {
 		esp_task_wdt_add(xHandleWifiReconnect);
 
         if (!WIFI_CONNECTED) {
-
-			// // Suspend the polling of the server immediately if not already performed
-			// if (xHandlePollServer != NULL && eTaskGetState(xHandlePollServer) == eRunning) {
-			// 	ESP_LOGI(TAG, "NOTIFY TASK xHandlePollServer = '0' ");
-			// 	xTaskNotify(xHandlePollServer, 0, eSetValueWithOverwrite);
-			// }
-
 			// update the wifi config with whatever is saved in globals.h
 			updateWifiConfig();
-			ESP_LOGI(TAG, "Attempting to connect to AP...");
-			ESP_LOGI(TAG, "wifi_config.sta.ssid: %s", (char*)wifi_config.sta.ssid);
-            ESP_LOGI(TAG, "wifi_config.sta.password: %s", (char*)wifi_config.sta.password);
+			ESP_LOGI(TAG, "Attempting connect to AP...");
+			ESP_LOGI(TAG, "SSID: %s", (char*)wifi_config.sta.ssid);
+            ESP_LOGI(TAG, "PASSWORD: %s", (char*)wifi_config.sta.password);
 
 			esp_task_wdt_reset();
             esp_err_t err = esp_wifi_connect();
@@ -191,9 +185,12 @@ void vTaskUpdateMotor(void * args) {
 				MOTOR_POSITION_STEPS += steps_remaining;
 				steps_remaining = 0;
 			}
+
 			portEXIT_CRITICAL(&mux);
 		}
-		
+
+		// update local nvs value after completion
+		nvsWriteBlob("init", "MOTOR_STEPS", &MOTOR_POSITION_STEPS, sizeof(long));
 	}
 
 }
@@ -264,6 +261,8 @@ void vTaskPollServer(void * args) {
 							portENTER_CRITICAL(&mux);
 							vTaskDelete(xHandleUpdateMotor);
 							xHandleUpdateMotor = NULL;
+							// update local nvs value in case the task was mid-operation
+							nvsWriteBlob("init", "MOTOR_STEPS", &MOTOR_POSITION_STEPS, sizeof(long));
 							xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 9, &xHandleUpdateMotor);
 							portEXIT_CRITICAL(&mux);
 							xTaskNotify(xHandleUpdateMotor, 1, eSetValueWithoutOverwrite);

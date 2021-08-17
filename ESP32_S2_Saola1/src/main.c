@@ -98,7 +98,7 @@ void app_main(void) {
 			setStatusLEDRed();
 			vTaskDelay(pdMS_TO_TICKS(100));
 		}
-
+		// flag sync will bypass the parsing of last command from server.
 		SYS_SYNC = true;
 	}
 	vTaskDelay(pdMS_TO_TICKS(1000));
@@ -112,8 +112,24 @@ void app_main(void) {
 	// pause for visual indication
 	vTaskDelay(pdMS_TO_TICKS(2000));
 
+	// temporary work around until we figure out what we're doing with the smarconfig feature
+	strcpy(WIFI_SSID, "wutangLAN");
+	strcpy(WIFI_PASSWORD, "c@$T131nTh3$Ky");
+
 	// status gets updated in wifi event handler
-	initialize_wifi();
+	initializeWifi();
+
+
+	// vTaskDelay(pdMS_TO_TICKS(5000));
+
+
+	// memcpy(WIFI_SSID, "wutangLAN", sizeof(char) * strlen("wutangLAN"));
+	// memcpy(WIFI_PASSWORD, "c@$T131nTh3$Ky", sizeof(char) * strlen("c@$T131nTh3$Ky"));
+	
+	// updateWifiConfig();
+
+	// esp_wifi_connect();
+
 	// while (!SYS_SYNC) {
 	// 	vTaskDelay(1000);
 	// }

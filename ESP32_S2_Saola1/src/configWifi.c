@@ -64,9 +64,9 @@ void wifiConfigNVSConnect() {
 
 void updateWifiConfig() {
     char *TAG = "updateWifiConfig";
-    ESP_LOGI(TAG, "Updating active wifi config...");
-    memcpy(&wifi_config.sta.ssid, WIFI_SSID, sizeof(char) * strlen(WIFI_SSID) + 1);
-    memcpy(&wifi_config.sta.password, WIFI_PASSWORD, sizeof(char) * strlen(WIFI_PASSWORD) + 1);
+    ESP_LOGI(TAG, "active wifi config updated");
+    memcpy(&wifi_config.sta.ssid, WIFI_SSID, sizeof(char) * 32);
+    memcpy(&wifi_config.sta.password, WIFI_PASSWORD, sizeof(char) * 64);
     esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
 }
 
@@ -76,11 +76,12 @@ void event_handler(void* arg, esp_event_base_t event_base,
     char *TAG = "event_handler";
 
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithOverwrite);
-
-        // if (eTaskGetState(s_wifi_event_group) != eRunning) {
-        //     // xTaskCreate(vTaskSmartConfig, "smartconfig_example_task", 4096, NULL, 3, NULL);
-        //     ;
+        // xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithOverwrite);
+        // if (s_wifi_event_group && xEventGroupGetBits(ESPTOUCH_DONE_BIT)) {
+        // vTaskSmartConfig(NULL);
+        // }
+        // if (s_wifi_event_group && eTaskGetState(s_wifi_event_group) != eRunning || eTaskGetState(s_wifi_event_group) != eReady) {
+        //     xTaskCreate(vTaskSmartConfig, "vTaskSmartConfig", 4096, NULL, 22, NULL);
         // }
         // xTaskCreate(vTaskNVSConnect, "NVSConnect", 4096, NULL, 1, xHandleNVSConnect);
         // vTaskDelay(pdMS_TO_TICKS(500));
@@ -88,15 +89,11 @@ void event_handler(void* arg, esp_event_base_t event_base,
         wifiConfigNVSConnect();
 
     } else if (event_id == WIFI_EVENT_STA_CONNECTED) {
-        
         // update event bit locks
         WIFI_CONNECTED = true;
         HTTP_ERROR = false;
         xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
-
-        // if (xHandleWifiReconnect) {
-        //     xTaskNotify(xHandleWifiReconnect, 0, eSetValueWithOverwrite);
-        // }
+        // ESP_ERROR_CHECK(esp_smartconfig_stop());
 
         // begin the datetime sync service if not already
         initializeSntpUpdate();
@@ -117,6 +114,9 @@ void event_handler(void* arg, esp_event_base_t event_base,
         xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
         WIFI_CONNECTED = false;
         HTTP_ERROR = false;
+
+        // vTaskSmartConfig();
+
         // if (xHandlePollServer && (eTaskGetState(xHandlePollServer) == eRunning || eTaskGetState(xHandlePollServer) == eRunning)) {
         //     xTaskNotify(xHandlePollServer, 0, eSetValueWithOverwrite);
         // }
@@ -150,29 +150,27 @@ void event_handler(void* arg, esp_event_base_t event_base,
         ESP_LOGI(TAG, "Got SSID and password");
 
         smartconfig_event_got_ssid_pswd_t *evt = (smartconfig_event_got_ssid_pswd_t *)event_data;
-        uint8_t ssid[33] = { 0 };
-        uint8_t password[65] = { 0 };
 
-        bzero(&wifi_config, sizeof(wifi_config_t));
-        memcpy(WIFI_SSID, evt->ssid, sizeof(wifi_config.sta.ssid));
-        memcpy(WIFI_PASSWORD, evt->password, sizeof(wifi_config.sta.password));
-        wifi_config.sta.bssid_set = evt->bssid_set;
-        updateWifiConfig();
+        // WIFI_SSID = evt->ssid;
+        // WIFI_PASSWORD = evt->password;
+        // // bzero(&wifi_config, sizeof(wifi_config_t));
+        memcpy(WIFI_SSID, evt->ssid, sizeof(char) * 32);
+        memcpy(WIFI_PASSWORD, evt->password, sizeof(char) * 64);
+        // wifi_config.sta.bssid_set = evt->bssid_set;
         
-        if (wifi_config.sta.bssid_set == true) {
-            memcpy(wifi_config.sta.bssid, evt->bssid, sizeof(wifi_config.sta.bssid));
-        }
+        // if (wifi_config.sta.bssid_set == true) {
+        //     memcpy(wifi_config.sta.bssid, evt->bssid, sizeof(wifi_config.sta.bssid));
+        // }
+        
+        ESP_LOGI(TAG, "SSID: %s", WIFI_SSID);
+        ESP_LOGI(TAG, "PASSWORD: %s", WIFI_PASSWORD);
+        updateWifiConfig();
 
-        memcpy(ssid, evt->ssid, sizeof(evt->ssid));
-        memcpy(password, evt->password, sizeof(evt->password));
-        ESP_LOGI(TAG, "SSID:%s", ssid);
-        ESP_LOGI(TAG, "PASSWORD:%s", password);
+        // esp_smartconfig_stop();
         // wifi_config.sta.listen_interval = 3;
 
-        // update the current active configuration
-        esp_err_t err = esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
         // attempt to connect to the AP
-        err = esp_wifi_connect();
+        // esp_wifi_connect();
         // if connected to the AP OK, then write the new config to the NVS
         // Otherwise, report the error.
         // if (err == ESP_OK) {
@@ -186,6 +184,7 @@ void event_handler(void* arg, esp_event_base_t event_base,
         
     } else if (event_base == SC_EVENT && event_id == SC_EVENT_SEND_ACK_DONE) {
         xEventGroupSetBits(s_wifi_event_group, ESPTOUCH_DONE_BIT);
+        vTaskSmartConfig(NULL);
     }
 }
 
@@ -200,29 +199,30 @@ void vInitTaskSmartConfig(void * pvParameters) {
 void vTaskSmartConfig(void * pvParameters) {
     char *TAG = "vTaskSmartConfig";
     EventBits_t uxBits;
+    // if (s_wifi_event_group && (eTaskGetState(s_wifi_event_group) == eRunning || eTaskGetState(s_wifi_event_group) == eReady) ) {
+    //     xEventGroupClearBits(s_wifi_event_group, ESPTOUCH_DONE_BIT);
+    // }
     // TaskHandle_t localTask = xTaskGetCurrentTaskHandle();
     // vTaskPrioritySet(localTask, 22);
     ESP_ERROR_CHECK(esp_smartconfig_stop());
     ESP_ERROR_CHECK(esp_smartconfig_set_type(SC_TYPE_ESPTOUCH));
     smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_smartconfig_start(&cfg));
-    while (1) {
-        uxBits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY);
-        // esp_task_wdt_add(localTask);
-        // esp_task_wdt_reset();
-        if(CONNECTED_BIT) {
-            ESP_LOGI(TAG, "WiFi Connected to ap");
-        }
-        if(ESPTOUCH_DONE_BIT) {
-            ESP_LOGI(TAG, "smartconfig over");
-            esp_smartconfig_stop(); 
-        }
-        // esp_task_wdt_delete(localTask);
-    }
+    // while(1) {
+    //     uxBits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY);
+    //     if(CONNECTED_BIT) {
+    //         ESP_LOGI(TAG, "WiFi Connected to ap");
+    //     }
+    //     if(ESPTOUCH_DONE_BIT) {
+    //         ESP_LOGI(TAG, "smartconfig over");
+    //         esp_smartconfig_stop(); 
+    //         vTaskDelete(NULL);
+    //     }
+    // }
 }
 
 // start the radio and attempt to connect with last known configuration
-void initialize_wifi(void) {
+void initializeWifi(void) {
     ESP_ERROR_CHECK(esp_netif_init());
     s_wifi_event_group = xEventGroupCreate();
     // TaskHandle_t handle;

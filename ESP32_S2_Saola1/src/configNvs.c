@@ -37,8 +37,8 @@ esp_err_t nvsRestoreSystemState() {
 	ESP_LOGI(TAG, "RESTORING PREVIOUS STATE");
 	cJSON *container = cJSON_CreateObject();
 	void *validator = NULL;
+	esp_err_t err = ESP_OK;
 
-	// portENTER_CRITICAL(&mux);
 	validator = nvsReadBlob("init", "ROD_DIAMETER", sizeof(float));
 	if (validator) {
 		memcpy(&ROD_DIAMETER_MM, validator, sizeof(float));
@@ -65,6 +65,8 @@ esp_err_t nvsRestoreSystemState() {
 		memcpy(&MOTOR_POSITION_STEPS, validator, sizeof(long));
 		cJSON_AddNumberToObject(container, "MOTOR_POSITION_STEPS", MOTOR_POSITION_STEPS);
 		vPortFree(validator);
+	} else {
+		return ESP_FAIL;
 	}
 	
 	validator = nvsReadBlob("init", "CURTAIN_PERC", sizeof(float));
@@ -72,13 +74,14 @@ esp_err_t nvsRestoreSystemState() {
 		memcpy(&CURTAIN_PERCENTAGE, validator, sizeof(float));
 		cJSON_AddNumberToObject(container, "CURTAIN_PERCENTAGE", CURTAIN_PERCENTAGE);
 		vPortFree(validator);
+	} else {
+		return ESP_FAIL;
 	}
 	
 	char *str = cJSON_PrintUnformatted(container);
 	ESP_LOGI(TAG, "STATE RESTORED: %s", str);
 	cJSON_free(str);
 	cJSON_Delete(container);
-	// portEXIT_CRITICAL(&mux);
 
 	return ESP_OK;
 }
