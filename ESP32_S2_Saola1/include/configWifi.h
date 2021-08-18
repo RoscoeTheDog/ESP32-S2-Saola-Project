@@ -1,6 +1,7 @@
 #include <esp_wifi.h>
 #include <esp_http_client.h>
 #include <globals.h>
+#include <espInterrupts.h>
 
 #include <string.h>
 #include "freertos/FreeRTOS.h"

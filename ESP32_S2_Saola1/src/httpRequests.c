@@ -52,26 +52,26 @@ esp_err_t initializeHttpClient() {
 esp_err_t httpPostData(char *c) {
     char *TAG = "httpPostData";
     esp_err_t err = ESP_FAIL;
-    ESP_LOGI(TAG, "HTTP REQUEST -- %s", c);
 
-    // ensure the http client is initialiazed. This is normally done upon boot.
-    if (!client) {
-        err = initializeHttpClient();
+    while (WIFI_CONNECTED) {
+        ESP_LOGI(TAG, "HTTP REQUEST -- %s", c);
 
-        // exit if failed to initialize the client.
-        if (err != ESP_OK) {
-            ESP_LOGI(TAG, "Failed to initialize http client. Request Dropped!");
-            return err;
+        // ensure the http client is initialiazed. This is normally done upon boot.
+        if (!client) {
+            err = initializeHttpClient();
+
+            // exit if failed to initialize the client.
+            if (err != ESP_OK) {
+                ESP_LOGI(TAG, "Failed to initialize http client. Request Dropped!");
+                return err;
+            }
         }
-    }
-    // set header data with content type
-    err = esp_http_client_set_header(client, "Accept", "application/json");
-    err = esp_http_client_set_header(client, "Content-Type", "application/json");
+        // set header data with content type
+        err = esp_http_client_set_header(client, "Accept", "application/json");
+        err = esp_http_client_set_header(client, "Content-Type", "application/json");
 
-    // set field data
-    err = esp_http_client_set_post_field(client, c, strlen(c));
-
-    if (WIFI_CONNECTED) {
+        // set field data
+        err = esp_http_client_set_post_field(client, c, strlen(c));
         err = esp_http_client_perform(client);
     }
 

@@ -48,9 +48,12 @@ extern TaskHandle_t xHandleUpdateMotor;
 extern TaskHandle_t xHandleSubmitLocalData;
 extern TaskHandle_t xHandleWifiPersistingTasks;
 extern TaskHandle_t xHandleSmartConfig;
+extern TaskHandle_t xHandleHomeCurtains;
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 extern EventGroupHandle_t s_wifi_event_group;
+
+extern void vTaskHomeCurtains(void *args);
 
 extern void vTaskWifiPersistingTasks(void *args);
 

@@ -64,6 +64,7 @@ void test(void *args) {
 
 void app_main(void) {
 	// nvs_flash_erase();
+	esp_task_wdt_init(10, false);
 
 	// configure the JSON library to use FREERTOS thread safe malloc / free methods
     cJSON_Hooks hooks;
@@ -117,8 +118,20 @@ void app_main(void) {
 	strcpy(WIFI_PASSWORD, "c@$T131nTh3$Ky");
 
 	// status gets updated in wifi event handler
-	initializeWifi();
+	// initializeWifi();
 
+	CURTAIN_PERCENTAGE = 0;
+	MOTOR_POSITION_STEPS = 0;	
+	vTaskDelay(pdMS_TO_TICKS(5000));	
+	ESP_LOGI("MAIN", "Notifying task home curtains");
+	xTaskNotify(xHandleHomeCurtains, 1, eSetValueWithOverwrite);
+
+	while(1) {
+		ESP_LOGI("SYSTEM", "CURTAIN_PERCENTAGE: %f", CURTAIN_PERCENTAGE);
+		vTaskDelay(pdMS_TO_TICKS(100));
+
+
+	}
 
 	// vTaskDelay(pdMS_TO_TICKS(5000));
 

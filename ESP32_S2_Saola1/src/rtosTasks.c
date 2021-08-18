@@ -24,6 +24,7 @@ TaskHandle_t xHandleHttpRequestServerData = NULL;
 TaskHandle_t xHandleSubmitLocalData = NULL;
 TaskHandle_t xHandleWifiPersistingTasks = NULL;
 TaskHandle_t xHandleSmartConfig = NULL;
+TaskHandle_t xHandleHomeCurtains = NULL;
 
 void initializeTasks() {
 	char *TAG = "initializeTasks";
@@ -55,14 +56,18 @@ void initializeTasks() {
 	xTaskCreate(vTaskMoveStepperReverse, "curtainStepperReverse", 2048, NULL, 22, &xHandleMoveStepperReverse);
 	configASSERT(xHandleMoveStepperReverse);
 
+	ESP_LOGI(TAG, "initializing vTaskHomeCurtains");
+	xTaskCreate(vTaskHomeCurtains, "vTaskHomeCurtains", 2048, NULL, 20, &xHandleHomeCurtains);
+	configASSERT(xHandleHomeCurtains);
+
 	ESP_LOGI(TAG, "initializing vTaskWifiReconnect");
 	xTaskCreate(vTaskWifiReconnect, "vTaskWifiReconnect", 2048, NULL, 22, &xHandleWifiReconnect);
 	configASSERT(xHandleWifiReconnect);
 	xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithoutOverwrite);
 
-	ESP_LOGI(TAG, "initializing vTaskSubmitLocalData");
-	xTaskCreate(vTaskSubmitLocalData, "vTaskSubmitLocalData", 4096, NULL, 10, &xHandleSubmitLocalData);
-	configASSERT(xHandleSubmitLocalData);
+	// ESP_LOGI(TAG, "initializing vTaskSubmitLocalData");
+	// xTaskCreate(vTaskSubmitLocalData, "vTaskSubmitLocalData", 4096, NULL, 10, &xHandleSubmitLocalData);
+	// configASSERT(xHandleSubmitLocalData);
 
 	ESP_LOGI(TAG, "initializing vTaskUpdateMotor");
 	xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 9, &xHandleUpdateMotor);
@@ -76,6 +81,23 @@ void initializeTasks() {
 	xTaskCreate(vTaskWifiPersistingTasks, "vTaskWifiPersistingTasks", 2048, NULL, 20, &xHandleWifiPersistingTasks);
 	configASSERT(xHandleWifiPersistingTasks);
 	xTaskNotify(xHandleWifiPersistingTasks, 1, eSetValueWithoutOverwrite);
+}
+
+void vTaskHomeCurtains(void *args) {
+
+	while(1) {
+		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+
+		if(!LIMIT_SWITCH_STATE) {
+			// notify max number of times. will run indefinately until ISR stops it
+			xTaskNotify(xHandleMoveStepperForward, ULONG_MAX - 1, eSetValueWithOverwrite);
+			xTaskNotify(xHandleHomeCurtains, 1, eSetValueWithoutOverwrite);
+		}	else {
+			xTaskNotify(xHandleHomeCurtains, 0, eSetValueWithoutOverwrite);
+		}
+		
+ 	}
+
 }
 
 void vTaskWifiPersistingTasks(void *args) {
@@ -468,8 +490,8 @@ void vTaskSubmitLocalData(void *args) {
 
 void vTaskMoveStepperForward(void * pvPerameters) {
 	char *TAG = "vTaskMoveStepperForward";
-	int	length_mm = CURTAIN_LENGTH_INCH * 25.4;
-	int	circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
+	float length_mm = CURTAIN_LENGTH_INCH * 25.4;
+	float circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
 	int MOTOR_STEP_LIMIT = StepperMotor_1->Config->microstepping * StepperMotor_1->Config->motor_steps * (length_mm/circumference_mm);
 	int interval = calcStepsForRotation(StepperMotor_1, 1);
 
@@ -564,11 +586,13 @@ void vTaskMoveStepperReverse(void * pvPerameters) {
 			}
 			CURTAIN_PERCENTAGE = MOTOR_POSITION_STEPS / (float)calcStepsForRotation(StepperMotor_1, (length_mm / circumference_mm) * 360) * 100;
 		}
-		portEXIT_CRITICAL(&mux);		
+		portEXIT_CRITICAL(&mux);	
 
 		if (xHandleSubmitLocalData) {
 			xTaskNotify(xHandleSubmitLocalData, 1, eSetValueWithOverwrite);
 		}
+		// block this task for just a moment to allow other ready tasks not to starve out the watchdog.
+		// vTaskDelay(1);
 
 		// unschedule/delete the task from wdt, so blocking does not cause timeout of wdt
 		esp_task_wdt_delete(xHandleMoveStepperReverse);
