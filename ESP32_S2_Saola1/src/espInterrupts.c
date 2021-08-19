@@ -7,25 +7,66 @@
 // #include <freertos/FreeRTOS.h>
 
 BaseType_t xHigherPriorityTaskWoken = pdTRUE;
-volatile bool BTN_0_PIN_STATE;
-volatile bool BTN_1_PIN_STATE;
-volatile bool LIMIT_SWITCH_STATE;
+volatile bool BTN_0_PIN_STATE = false;
+volatile bool BTN_1_PIN_STATE = false;
+volatile bool LIMIT_SWITCH_STATE = false;
+volatile bool SMARTCONFIG_SWITCH_STATE = false;
 
 void updateButtonsState() {
 	// do this once every interrupt, as to avoid checking the pin logic multiple times.
 	LIMIT_SWITCH_STATE = gpio_get_level(LIMIT_SWITCH_PIN);
 	BTN_0_PIN_STATE = gpio_get_level(BTN_0_INPUT_PIN);
 	BTN_1_PIN_STATE = gpio_get_level(BTN_1_INPUT_PIN);
+	SMARTCONFIG_SWITCH_STATE = gpio_get_level(SMARTCONFIG_PAIR_SWITCH);
 }
 
 // All interrupts must be declared as a boolean to signify if they yield or not.
 // IRAM_ATTR flag tells the compiler to keep it in internal memory rather than flash. It is much faster this way.
 // *args are not neccessary, but can be used to pass in an object with multiple arguments.
-extern inline bool IRAM_ATTR xISR_button_0(void * args) {
+inline bool IRAM_ATTR xISR_button_0(void * args) {
 	char *TAG = "xISR_button_0";
 	// Poll the buttons for any changes.
 	updateButtonsState();
+	
+	if(SMARTCONFIG_SWITCH_STATE) {
 
+		if (xHandleSmartConfig && (eTaskGetState(xHandleSmartConfig) != eRunning || eTaskGetState(xHandleSmartConfig) != eReady)) {
+			xTaskNotify(xHandleSmartConfig, 1, eSetValueWithOverwrite);
+		}
+		
+
+		// if (!ESP_SMARTCONFIG_STATUS) {
+
+		// 	if (!RADIO_INITIALIZED) {
+		// 		initializeWifi();u
+		// 	}
+		// 	ESP_LOGI(TAG, "configuring smartconfig service");
+		// 	ESP_ERROR_CHECK(esp_smartconfig_set_type(SC_TYPE_ESPTOUCH));
+		// 	smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
+
+		// 	ESP_LOGI(TAG, "starting smartconfig service");
+		// 	esp_err_t err = esp_smartconfig_start(&cfg);
+		// 	ESP_ERROR_CHECK(err);
+		// 	if (err == ESP_OK) {
+		// 		ESP_SMARTCONFIG_STATUS = true;
+		// 		ESP_LOGI(TAG, "smartconfig service started successfully!");
+		// 	}
+			
+	} else {
+
+		if (xHandleSmartConfig && (eTaskGetState(xHandleSmartConfig) == eRunning || eTaskGetState(xHandleSmartConfig) == eReady)) {
+			xTaskNotify(xHandleSmartConfig, 0, eSetValueWithOverwrite);
+		}
+
+		// esp_err_t err = esp_smartconfig_stop();
+		// ESP_ERROR_CHECK(err);
+		// if (err == ESP_OK) {
+		// 	ESP_LOGI(TAG, "smartconfig service stopped!");
+		// 	ESP_SMARTCONFIG_STATUS = false;
+		// }
+	}
+	
+	
 	if (LIMIT_SWITCH_STATE) {
 
 		if (xHandleMoveStepperForward) {
@@ -53,9 +94,9 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 		}
 
 		if (xHandleHomeCurtains) {
-			xTaskNotifyFromISR(xHandleHomeCurtains, 0, eSetValueWithoutOverwrite, &xHigherPriorityTaskWoken);
-		// 	vTaskDelete(xHandleHomeCurtains);
-		// 	xHandleHomeCurtains = NULL;
+			xTaskNotifyFromISR(xHandleHomeCurtains, 0, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+			vTaskDelete(xHandleHomeCurtains);
+			xHandleHomeCurtains = NULL;
 		}
 		
 		if (xHandleMoveStepperForward) {
@@ -78,14 +119,14 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 		}
 
 		if (xHandleHomeCurtains) {
-			xTaskNotifyFromISR(xHandleHomeCurtains, 0, eSetValueWithoutOverwrite, &xHigherPriorityTaskWoken);
-			// vTaskDelete(xHandleHomeCurtains);
-			// xHandleHomeCurtains = NULL;
+			xTaskNotifyFromISR(xHandleHomeCurtains, 0, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+			vTaskDelete(xHandleHomeCurtains);
+			xHandleHomeCurtains = NULL;
 		}
 
-		if (xHandleMoveStepperForward) {
-			xTaskNotifyFromISR(xHandleMoveStepperForward, 0, eSetValueWithoutOverwrite, &xHigherPriorityTaskWoken);
-		}
+		// if (xHandleMoveStepperForward && (eTaskGetState(xHandleMoveStepperForward) != eRunning || eTaskGetState(xHandleMoveStepperForward) != eReady) ) {
+		// 	xTaskNotifyFromISR(xHandleMoveStepperForward, 0, eSetValueWithoutOverwrite, &xHigherPriorityTaskWoken);
+		// }
 
 		if (xHandleMoveStepperReverse) {
 			// Notify task to rotate the motor. Incriment by two in case it finishes before the buttons state is updated.
@@ -106,6 +147,18 @@ extern inline bool IRAM_ATTR xISR_button_0(void * args) {
 				xTaskNotifyFromISR(xHandleMoveStepperReverse, 0, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
 			} 
 
+		}
+
+		if(xHandleUpdateMotor && (eTaskGetState(xHandleUpdateMotor) != eRunning || eTaskGetState(xHandleUpdateMotor) != eReady ) ) {
+
+			if (xHandleMoveStepperForward && (eTaskGetState(xHandleMoveStepperForward) == eRunning || eTaskGetState(xHandleMoveStepperForward) == eReady) ) {
+				xTaskNotifyFromISR(xHandleMoveStepperForward, 0, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+			}
+
+			if (xHandleMoveStepperReverse && (eTaskGetState(xHandleMoveStepperReverse) == eRunning || eTaskGetState(xHandleMoveStepperReverse) == eReady) ) {
+				xTaskNotifyFromISR(xHandleMoveStepperReverse, 0, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
+			} 
+			
 		}
 		
 

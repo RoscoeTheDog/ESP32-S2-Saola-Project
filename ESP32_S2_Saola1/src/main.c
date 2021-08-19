@@ -27,7 +27,6 @@ extern "C" {
 	#include <httpRequests.h>
 	#include <esp_err.h>
 	#include <string.h>
-	#include <esp_pm.h>
 	#include <esp_sleep.h>
 	#include <esp_freertos_hooks.h>
 	#include <freertos/task.h>
@@ -35,6 +34,7 @@ extern "C" {
 	#include <sys/time.h>
 	#include <time.h>
 	#include <globals.h>
+	#include <esp_pm.h>
 
 	#include <cJSON.h>
 	#include <cJSON_Utils.h>
@@ -63,6 +63,8 @@ void test(void *args) {
 }
 
 void app_main(void) {
+
+	esp_log_level_set("WIFI", ESP_LOG_VERBOSE);
 	// nvs_flash_erase();
 	esp_task_wdt_init(10, false);
 
@@ -108,30 +110,40 @@ void app_main(void) {
 	setStatusLEDYellow();
 
 	// initialize rtos tasks
-	initializeTasks();
+	initializeRTOSTasks();
 
 	// pause for visual indication
 	vTaskDelay(pdMS_TO_TICKS(2000));
 
 	// temporary work around until we figure out what we're doing with the smarconfig feature
-	strcpy(WIFI_SSID, "wutangLAN");
-	strcpy(WIFI_PASSWORD, "c@$T131nTh3$Ky");
+	// strcpy(WIFI_SSID, "wutangLAN");
+	// strcpy(WIFI_PASSWORD, "c@$T131nTh3$Ky");
+
+
+
+
+
+
+
+
+
 
 	// status gets updated in wifi event handler
 	// initializeWifi();
 
-	CURTAIN_PERCENTAGE = 0;
-	MOTOR_POSITION_STEPS = 0;	
-	vTaskDelay(pdMS_TO_TICKS(5000));	
-	ESP_LOGI("MAIN", "Notifying task home curtains");
-	xTaskNotify(xHandleHomeCurtains, 1, eSetValueWithOverwrite);
+	// CURTAIN_PERCENTAGE = 0;
+	// MOTOR_POSITION_STEPS = 0;	
+	// vTaskDelay(pdMS_TO_TICKS(5000));	
+	// ESP_LOGI("MAIN", "Notifying task home curtains");
 
-	while(1) {
-		ESP_LOGI("SYSTEM", "CURTAIN_PERCENTAGE: %f", CURTAIN_PERCENTAGE);
-		vTaskDelay(pdMS_TO_TICKS(100));
+	// if(xHandleHomeCurtains) {
+	// 	xTaskNotify(xHandleHomeCurtains, 1, eSetValueWithOverwrite);
+	// }
 
-
-	}
+	// while(1) {
+	// 	ESP_LOGI("SYSTEM", "CURTAIN_PERCENTAGE: %f", CURTAIN_PERCENTAGE);
+	// 	vTaskDelay(pdMS_TO_TICKS(100));
+	// }
 
 	// vTaskDelay(pdMS_TO_TICKS(5000));
 

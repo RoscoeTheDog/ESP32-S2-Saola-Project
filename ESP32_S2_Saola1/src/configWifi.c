@@ -3,18 +3,18 @@
 #include <freertos/task.h>
 #include <freertos/FreeRTOS.h>
 
-/* The event group allows multiple bits for each event,
-   but we only care about one event - are we connected
-   to the AP with an IP? */
-static const int CONNECTED_BIT = BIT0;
-static const int ESPTOUCH_DONE_BIT = BIT1;
-wifi_config_t wifi_config;
-
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 EventGroupHandle_t s_wifi_event_group;
 TaskHandle_t xHandleNVSConnect;
+wifi_config_t wifi_config;
 
+/* The event group allows multiple bits for each event,
+   but we only care about one event - are we connected
+   to the AP with an IP? */
+volatile bool ESP_SMARTCONFIG_STATUS = false;
 volatile bool WIFI_CONNECTED = false;
+volatile bool RADIO_INITIALIZED = false;
+const int ESPTOUCH_DONE_BIT = BIT0;
 
 void vTaskNVSConnect() {
     char *TAG = "vTaskNVSConnect";
@@ -92,7 +92,7 @@ void event_handler(void* arg, esp_event_base_t event_base,
         // update event bit locks
         WIFI_CONNECTED = true;
         HTTP_ERROR = false;
-        xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
+        // xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
         // ESP_ERROR_CHECK(esp_smartconfig_stop());
 
         // begin the datetime sync service if not already
@@ -111,7 +111,7 @@ void event_handler(void* arg, esp_event_base_t event_base,
         // }
     } else if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
         ESP_LOGI(TAG, "WiFi Disconnected from ap");
-        xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
+        // xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
         WIFI_CONNECTED = false;
         HTTP_ERROR = false;
 
@@ -139,7 +139,7 @@ void event_handler(void* arg, esp_event_base_t event_base,
         // printf("Trying last known WiFi configuration...\n");
         // wifiConfigNVSConnect();
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
+        // xEventGroupSetBits(s_wifi_event_group, CONNECTED_BIT);
         WIFI_CONNECTED = true;
         HTTP_ERROR = false;
     } else if (event_base == SC_EVENT && event_id == SC_EVENT_SCAN_DONE) {
@@ -183,46 +183,16 @@ void event_handler(void* arg, esp_event_base_t event_base,
         // }
         
     } else if (event_base == SC_EVENT && event_id == SC_EVENT_SEND_ACK_DONE) {
+        ESP_LOGD(TAG, "SETTING ESPTOUCH_DONE_BIT");
         xEventGroupSetBits(s_wifi_event_group, ESPTOUCH_DONE_BIT);
-        vTaskSmartConfig(NULL);
+        // ESPTOUCH_DONE_BIT = true;
     }
-}
-
-void vInitTaskSmartConfig(void * pvParameters) {
-    ;
-    // ESP_ERROR_CHECK(esp_smartconfig_stop());
-    // ESP_ERROR_CHECK(esp_smartconfig_set_type(SC_TYPE_ESPTOUCH));
-    // smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
-    // vTaskSmartConfig(NULL);
-}
-
-void vTaskSmartConfig(void * pvParameters) {
-    char *TAG = "vTaskSmartConfig";
-    EventBits_t uxBits;
-    // if (s_wifi_event_group && (eTaskGetState(s_wifi_event_group) == eRunning || eTaskGetState(s_wifi_event_group) == eReady) ) {
-    //     xEventGroupClearBits(s_wifi_event_group, ESPTOUCH_DONE_BIT);
-    // }
-    // TaskHandle_t localTask = xTaskGetCurrentTaskHandle();
-    // vTaskPrioritySet(localTask, 22);
-    ESP_ERROR_CHECK(esp_smartconfig_stop());
-    ESP_ERROR_CHECK(esp_smartconfig_set_type(SC_TYPE_ESPTOUCH));
-    smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_smartconfig_start(&cfg));
-    // while(1) {
-    //     uxBits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY);
-    //     if(CONNECTED_BIT) {
-    //         ESP_LOGI(TAG, "WiFi Connected to ap");
-    //     }
-    //     if(ESPTOUCH_DONE_BIT) {
-    //         ESP_LOGI(TAG, "smartconfig over");
-    //         esp_smartconfig_stop(); 
-    //         vTaskDelete(NULL);
-    //     }
-    // }
 }
 
 // start the radio and attempt to connect with last known configuration
 void initializeWifi(void) {
+    char *TAG = "initializeWifi";
+    ESP_LOGI(TAG, "initializing wireless radio");
     ESP_ERROR_CHECK(esp_netif_init());
     s_wifi_event_group = xEventGroupCreate();
     // TaskHandle_t handle;
@@ -246,7 +216,13 @@ void initializeWifi(void) {
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     updateWifiConfig();
-    ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
+
+    err = esp_wifi_init(&cfg);
+    if (err == ESP_OK) {
+        RADIO_INITIALIZED = true;
+    } else {
+        RADIO_INITIALIZED = false;
+    }
 
     ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL) );
     ESP_ERROR_CHECK( esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL) );

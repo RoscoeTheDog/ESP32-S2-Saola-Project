@@ -27,12 +27,14 @@
 #include <configNvs.h>
 
 extern volatile bool WIFI_CONNECTED;
+extern volatile bool RADIO_INITIALIZED;
 extern wifi_config_t wifi_config;
+extern const int ESPTOUCH_DONE_BIT;
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 extern EventGroupHandle_t s_wifi_event_group;
 
-extern void vTaskSmartConfig(void * parm);
+extern void toggleSmartConfig(void * parm);
 
 extern void updateWifiConfig();
 
@@ -40,7 +42,7 @@ extern void prototypeHttp();
 
 extern void vInitTaskSmartConfig(void *pvParameters);
 
-extern void vTaskSmartConfig(void * pvParameters);
+extern void toggleSmartConfig(void * pvParameters);
 
 extern void wifi_init_softtap(void);
 

@@ -26,8 +26,8 @@ TaskHandle_t xHandleWifiPersistingTasks = NULL;
 TaskHandle_t xHandleSmartConfig = NULL;
 TaskHandle_t xHandleHomeCurtains = NULL;
 
-void initializeTasks() {
-	char *TAG = "initializeTasks";
+void initializeRTOSTasks() {
+	char *TAG = "initializeRTOSTasks";
 
 	ESP_LOGI(TAG, "initializing vTaskRTOSDebug");
 	xTaskCreate(vTaskRTOSDebug, "vTaskRTOSDebug", 4096, NULL, 24, &xHandleRTOSDebug);
@@ -56,14 +56,14 @@ void initializeTasks() {
 	xTaskCreate(vTaskMoveStepperReverse, "curtainStepperReverse", 2048, NULL, 22, &xHandleMoveStepperReverse);
 	configASSERT(xHandleMoveStepperReverse);
 
+	// ESP_LOGI(TAG, "initializing vTaskWifiReconnect");
+	// xTaskCreate(vTaskWifiReconnect, "vTaskWifiReconnect", 2048, NULL, 22, &xHandleWifiReconnect);
+	// configASSERT(xHandleWifiReconnect);
+	// xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithoutOverwrite);
+
 	ESP_LOGI(TAG, "initializing vTaskHomeCurtains");
 	xTaskCreate(vTaskHomeCurtains, "vTaskHomeCurtains", 2048, NULL, 20, &xHandleHomeCurtains);
 	configASSERT(xHandleHomeCurtains);
-
-	ESP_LOGI(TAG, "initializing vTaskWifiReconnect");
-	xTaskCreate(vTaskWifiReconnect, "vTaskWifiReconnect", 2048, NULL, 22, &xHandleWifiReconnect);
-	configASSERT(xHandleWifiReconnect);
-	xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithoutOverwrite);
 
 	// ESP_LOGI(TAG, "initializing vTaskSubmitLocalData");
 	// xTaskCreate(vTaskSubmitLocalData, "vTaskSubmitLocalData", 4096, NULL, 10, &xHandleSubmitLocalData);
@@ -77,8 +77,12 @@ void initializeTasks() {
 	xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 9, &xHandlePollServer);
 	configASSERT(xHandlePollServer);
 
-	ESP_LOGI(TAG, "initializing vTaskWifiPersistingTasks");
-	xTaskCreate(vTaskWifiPersistingTasks, "vTaskWifiPersistingTasks", 2048, NULL, 20, &xHandleWifiPersistingTasks);
+	ESP_LOGI(TAG, "initializing vTaskSmartConfig");
+	xTaskCreate(vTaskSmartConfig, "vTaskSmartConfig", 4096, NULL, 20, &xHandleSmartConfig);
+	configASSERT(xHandleSmartConfig);
+
+	ESP_LOGI(TAG, "initializing vTaskPersistingWifiTasks");
+	xTaskCreate(vTaskPersistingWifiTasks, "vTaskPersistingWifiTasks", 2048, NULL, 20, &xHandleWifiPersistingTasks);
 	configASSERT(xHandleWifiPersistingTasks);
 	xTaskNotify(xHandleWifiPersistingTasks, 1, eSetValueWithoutOverwrite);
 }
@@ -100,7 +104,7 @@ void vTaskHomeCurtains(void *args) {
 
 }
 
-void vTaskWifiPersistingTasks(void *args) {
+void vTaskPersistingWifiTasks(void *args) {
 
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
@@ -159,6 +163,50 @@ void vTaskWifiReconnect(void *args) {
 		vTaskDelay(pdMS_TO_TICKS(1));
 		// continue running the task unless otherwise blocked or deleted
 		xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithoutOverwrite);
+	}
+}
+
+void vTaskSmartConfig(void *args) {
+	char *TAG = "vTaskSmartConfig";
+	EventBits_t uxBits;
+
+	while(1) {
+		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+
+		while (!ESP_SMARTCONFIG_STATUS) {
+
+			if (!RADIO_INITIALIZED) {
+				initializeWifi();
+			}
+			ESP_LOGI(TAG, "configuring smartconfig service");
+			ESP_ERROR_CHECK(esp_smartconfig_set_type(SC_TYPE_ESPTOUCH));
+			smartconfig_start_config_t cfg = {.enable_log = true};
+
+			ESP_LOGI(TAG, "starting smartconfig service");
+			esp_err_t err = esp_smartconfig_start(&cfg);
+			ESP_ERROR_CHECK(err);
+			if (err == ESP_OK) {
+				ESP_SMARTCONFIG_STATUS = true;
+				ESP_LOGI(TAG, "smartconfig service started successfully");
+			} else {
+				ESP_LOGI(TAG, "smartconfig service failed to initialize");
+			}
+
+			vTaskDelay(1);			
+		}
+
+		while (1) {
+			uxBits = xEventGroupWaitBits(s_wifi_event_group, ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY);
+
+			if(uxBits & ESPTOUCH_DONE_BIT) {
+				ESP_LOGI(TAG, "smart config completed -- stopping service.");
+				esp_smartconfig_stop();
+				ESP_SMARTCONFIG_STATUS = false;
+				xEventGroupClearBits(xHandleSmartConfig, ESPTOUCH_DONE_BIT);
+			}
+			vTaskDelay(1);
+		}
+
 	}
 }
 

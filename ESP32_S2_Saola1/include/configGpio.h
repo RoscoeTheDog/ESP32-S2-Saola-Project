@@ -13,6 +13,9 @@
 #define LIMIT_SWITCH_PIN GPIO_NUM_16
 #define LIMIT_SWITCH_PIN_SEL GPIO_SEL_16
 
+#define SMARTCONFIG_PAIR_SWITCH GPIO_NUM_15
+#define SMARTCONFIG_PAIR_SWITCH_SEL GPIO_SEL_15
+
 #define STEP_PIN GPIO_NUM_33
 #define STEP_PIN_SEL GPIO_SEL_33
 
@@ -37,6 +40,8 @@ extern volatile bool BTN_0_INPUT_PIN_STATE;		// holding in memory is faster for 
 #define BTN_1_INPUT_PIN GPIO_NUM_26
 #define BTN_1_INPUT_PIN_SEL GPIO_SEL_26
 extern volatile bool BTN_1_INPUT_PIN_STATE;
+
+extern volatile bool ESP_SMARTCONFIG_STATUS;
 
 extern void vInitGpioConfig();
 

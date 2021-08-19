@@ -53,27 +53,19 @@ extern TaskHandle_t xHandleHomeCurtains;
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 extern EventGroupHandle_t s_wifi_event_group;
 
+extern void initializeRTOSTasks();
+
 extern void vTaskHomeCurtains(void *args);
 
-extern void vTaskWifiPersistingTasks(void *args);
+extern void vTaskPersistingWifiTasks(void *args);
 
 extern void vTaskSubmitLocalData(void *args);
 
-extern void initializeTasks();
-
-extern void vInitTaskWifiReconnect();
-
 extern void vTaskWifiReconnect(void *args);
-
-extern void vInitTaskUpdateMotor();
 
 extern void vTaskUpdateMotor();
 
 extern void vTaskUpdateDatetimeStatus( void *args);
-
-extern void vInitTaskPollServer();
-
-extern void vInitTaskStatusLEDWatchdog();
 
 extern void vTaskStatusLEDWatchdog(void *args);
 
@@ -82,30 +74,18 @@ extern void vTaskPollServer(void * args);
 extern void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data);
 
-extern void vInitTaskSleep();
+extern void vTaskSmartConfig(void *args);
 
 extern bool vTaskIdleHook();
 
 extern void vTaskSleep();
 
-extern void vInitTaskOpenCurtains();
-
-extern void vInitTaskCloseCurtains();
-
 extern void vTaskMoveStepperForward(void * pvPerameters);
 
 extern void vTaskMoveStepperReverse(void * pvPerameters);
 
-extern void vInitTaskCurtainMotor();
-
-extern void vInitTaskLEDFade( void );
-
-extern void vInitTaskRTOSDebug( void );
-
 extern void vTaskLEDFade( void * pvParameters);
 
 extern void vTaskRTOSDebug( void * pvParameters);
-
-extern void vInitTimerLEDFade( int milliseconds );
 
 #endif

@@ -17,6 +17,13 @@ void vInitGpioConfig(){
 	LIMIT_CONF.pull_down_en = GPIO_PULLDOWN_ENABLE;
 	LIMIT_CONF.intr_type = GPIO_PIN_INTR_DISABLE;
 
+	gpio_config_t SMARTCONFIG_SWITCH_CONF;
+	SMARTCONFIG_SWITCH_CONF.pin_bit_mask = SMARTCONFIG_PAIR_SWITCH_SEL;
+	SMARTCONFIG_SWITCH_CONF.mode = GPIO_MODE_INPUT;
+	SMARTCONFIG_SWITCH_CONF.pull_up_en = GPIO_PULLUP_DISABLE;
+	SMARTCONFIG_SWITCH_CONF.pull_down_en = GPIO_PULLDOWN_ENABLE;
+	SMARTCONFIG_SWITCH_CONF.intr_type = GPIO_PIN_INTR_DISABLE;
+
 	gpio_config_t DIR_CONF;
 	DIR_CONF.pin_bit_mask = DIR_PIN_SEL;
 	DIR_CONF.mode = GPIO_MODE_OUTPUT;
@@ -86,6 +93,7 @@ void vInitGpioConfig(){
 	// Pass structs to GPIO configurator
 	gpio_config(&STEP_CONF);
 	gpio_config(&LIMIT_CONF);
+	gpio_config(&SMARTCONFIG_SWITCH_CONF);
 	gpio_config(&DIR_CONF);
 	gpio_config(&EN_CONF);
 	gpio_config(&BTN_0_CONF);
