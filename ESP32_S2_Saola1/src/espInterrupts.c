@@ -30,6 +30,21 @@ inline bool IRAM_ATTR xISR_button_0(void * args) {
 	
 	if(SMARTCONFIG_SWITCH_STATE) {
 
+		// if (!ESP_SMARTCONFIG_STATUS && RADIO_INITIALIZED) {
+
+		// 	// if (!RADIO_INITIALIZED) {
+		// 	// 	initializeWifi();
+		// 	// }
+		// 	esp_smartconfig_set_type(SC_TYPE_ESPTOUCH);
+		// 	smartconfig_start_config_t cfg = {.enable_log = false};
+
+		// 	esp_err_t err = esp_smartconfig_start(&cfg);
+		// 	// ESP_ERROR_CHECK(err);
+		// 	if (err == ESP_OK) {
+		// 		ESP_SMARTCONFIG_STATUS = true;
+		// 	}
+		// }
+
 		if (xHandleSmartConfig && (eTaskGetState(xHandleSmartConfig) != eRunning || eTaskGetState(xHandleSmartConfig) != eReady)) {
 			xTaskNotify(xHandleSmartConfig, 1, eSetValueWithOverwrite);
 		}

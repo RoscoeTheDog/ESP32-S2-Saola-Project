@@ -183,8 +183,12 @@ void event_handler(void* arg, esp_event_base_t event_base,
         // }
         
     } else if (event_base == SC_EVENT && event_id == SC_EVENT_SEND_ACK_DONE) {
-        ESP_LOGD(TAG, "SETTING ESPTOUCH_DONE_BIT");
-        xEventGroupSetBits(s_wifi_event_group, ESPTOUCH_DONE_BIT);
+        ESP_LOGI(TAG, "smart config completed -- stopping service.");
+        ESP_SMARTCONFIG_STATUS = false;
+        esp_smartconfig_stop();
+        xEventGroupClearBits(xHandleSmartConfig, ESPTOUCH_DONE_BIT);
+        // ESP_LOGD(TAG, "SETTING ESPTOUCH_DONE_BIT");
+        // xEventGroupSetBits(s_wifi_event_group, ESPTOUCH_DONE_BIT);
         // ESPTOUCH_DONE_BIT = true;
     }
 }

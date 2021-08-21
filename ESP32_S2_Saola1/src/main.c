@@ -62,6 +62,49 @@ void test(void *args) {
 
 }
 
+// void vTaskSmartConfig(void *args) {
+// 	char *TAG = "vTaskSmartConfig";
+// 	EventBits_t uxBits;
+
+// 	while(1) {
+// 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+
+// 		while (!ESP_SMARTCONFIG_STATUS) {
+// 			if (!RADIO_INITIALIZED) {
+// 				initializeWifi();
+// 			}
+// 			ESP_LOGI(TAG, "configuring smartconfig service");
+// 			ESP_ERROR_CHECK(esp_smartconfig_set_type(SC_TYPE_ESPTOUCH));
+// 			smartconfig_start_config_t cfg = {.enable_log = false};
+
+// 			ESP_LOGI(TAG, "starting smartconfig service");
+// 			esp_err_t err = esp_smartconfig_start(&cfg);
+// 			ESP_ERROR_CHECK(err);
+// 			if (err == ESP_OK) {
+// 				ESP_SMARTCONFIG_STATUS = true;
+// 				ESP_LOGI(TAG, "smartconfig service started successfully");
+// 			} else {
+// 				ESP_LOGI(TAG, "smartconfig service failed to initialize");
+// 			}
+			
+// 			vTaskDelay(1);			
+// 		}
+
+// 		while (1) {
+// 			uxBits = xEventGroupWaitBits(s_wifi_event_group, ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY);
+
+// 			if(uxBits & ESPTOUCH_DONE_BIT) {
+// 				ESP_LOGI(TAG, "smart config completed -- stopping service.");
+// 				esp_smartconfig_stop();
+// 				ESP_SMARTCONFIG_STATUS = false;
+// 				xEventGroupClearBits(xHandleSmartConfig, ESPTOUCH_DONE_BIT);
+// 			}
+// 			vTaskDelay(1);
+// 		}
+
+// 	}
+// }
+
 void app_main(void) {
 
 	esp_log_level_set("WIFI", ESP_LOG_VERBOSE);
@@ -90,7 +133,6 @@ void app_main(void) {
 	vInitCurtainMotorConfig_0();		// Primary Motor Control	
 	initializeTimerConfig();				// Button interrupts
 
-	
 	// pause for visual indication
 	vTaskDelay(pdMS_TO_TICKS(2000));
 	if (nvsRestoreSystemState() == ESP_OK) {
@@ -116,8 +158,46 @@ void app_main(void) {
 	vTaskDelay(pdMS_TO_TICKS(2000));
 
 	// temporary work around until we figure out what we're doing with the smarconfig feature
-	// strcpy(WIFI_SSID, "wutangLAN");
-	// strcpy(WIFI_PASSWORD, "c@$T131nTh3$Ky");
+	strcpy(WIFI_SSID, "wutangLAN");
+	strcpy(WIFI_PASSWORD, "c@$T131nTh3$Ky");
+
+	initializeWifi();
+
+	// char *TAG = "main";
+	// ESP_LOGI(TAG, "initializing vTaskSmartConfig");
+	// xTaskCreate(vTaskSmartConfig, "vTaskSmartConfig", 4096, NULL, 20, &xHandleSmartConfig);
+	// configASSERT(xHandleSmartConfig);
+
+	// xTaskNotify(xHandleSmartConfig, 1, eSetValueWithOverwrite); 
+	// if (!RADIO_INITIALIZED) {
+	// 		initializeWifi();
+	// }
+	// 	ESP_LOGI(TAG, "configuring smartconfig service");
+	// 	ESP_ERROR_CHECK(esp_smartconfig_set_type(SC_TYPE_ESPTOUCH));
+	// 	smartconfig_start_config_t cfg = {.enable_log = true};
+
+	// 	ESP_LOGI(TAG, "starting smartconfig service");
+	// 	esp_err_t err = esp_smartconfig_start(&cfg);
+	// 	ESP_ERROR_CHECK(err);
+	// 	if (err == ESP_OK) {
+	// 		ESP_SMARTCONFIG_STATUS = true;
+	// 		ESP_LOGI(TAG, "smartconfig service started successfully");
+	// 	} else {
+	// 		ESP_LOGI(TAG, "smartconfig service failed to initialize");
+	// 	}
+
+	// 	while (1) {
+	// 		EventBits_t uxBits = xEventGroupWaitBits(s_wifi_event_group, ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY);
+
+	// 		if(uxBits & ESPTOUCH_DONE_BIT) {
+	// 			ESP_LOGI(TAG, "smart config completed -- stopping service.");
+	// 			esp_smartconfig_stop();
+	// 			ESP_SMARTCONFIG_STATUS = false;
+	// 			xEventGroupClearBits(xHandleSmartConfig, ESPTOUCH_DONE_BIT);
+	// 		}
+			
+	// 		vTaskDelay(1);
+	// 	}
 
 
 

@@ -174,13 +174,12 @@ void vTaskSmartConfig(void *args) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 
 		while (!ESP_SMARTCONFIG_STATUS) {
-
 			if (!RADIO_INITIALIZED) {
 				initializeWifi();
 			}
 			ESP_LOGI(TAG, "configuring smartconfig service");
 			ESP_ERROR_CHECK(esp_smartconfig_set_type(SC_TYPE_ESPTOUCH));
-			smartconfig_start_config_t cfg = {.enable_log = true};
+			smartconfig_start_config_t cfg = {.enable_log = false};
 
 			ESP_LOGI(TAG, "starting smartconfig service");
 			esp_err_t err = esp_smartconfig_start(&cfg);
@@ -191,21 +190,21 @@ void vTaskSmartConfig(void *args) {
 			} else {
 				ESP_LOGI(TAG, "smartconfig service failed to initialize");
 			}
-
+			
 			vTaskDelay(1);			
 		}
 
-		while (1) {
-			uxBits = xEventGroupWaitBits(s_wifi_event_group, ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY);
+		// while (1) {
+		// 	uxBits = xEventGroupWaitBits(s_wifi_event_group, ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY);
 
-			if(uxBits & ESPTOUCH_DONE_BIT) {
-				ESP_LOGI(TAG, "smart config completed -- stopping service.");
-				esp_smartconfig_stop();
-				ESP_SMARTCONFIG_STATUS = false;
-				xEventGroupClearBits(xHandleSmartConfig, ESPTOUCH_DONE_BIT);
-			}
-			vTaskDelay(1);
-		}
+		// 	if(uxBits & ESPTOUCH_DONE_BIT) {
+		// 		ESP_LOGI(TAG, "smart config completed -- stopping service.");
+		// 		esp_smartconfig_stop();
+		// 		ESP_SMARTCONFIG_STATUS = false;
+		// 		xEventGroupClearBits(xHandleSmartConfig, ESPTOUCH_DONE_BIT);
+		// 	}
+		// 	vTaskDelay(1);
+		// }
 
 	}
 }
@@ -740,11 +739,11 @@ void vTaskRTOSDebug( void * pvParameters){
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 		char buffer[2048];
-		vTaskList(buffer);
-		printf("%s\n", "**********************************");
-		printf("%s\n", "Task  State   Prio    Stack    Num");
-		printf("%s\n", buffer);
-		printf("%s\n", "**********************************");
+		// vTaskList(buffer);
+		// printf("%s\n", "**********************************");
+		// printf("%s\n", "Task  State   Prio    Stack    Num");
+		// printf("%s\n", buffer);
+		// printf("%s\n", "**********************************");
 
 		vTaskDelay(pdMS_TO_TICKS(500));
 		xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithoutOverwrite);
