@@ -103,18 +103,6 @@ esp_err_t httpFetchServerData() {
     portEXIT_CRITICAL(&mux);
     jsonStringBuffer = cJSON_PrintUnformatted(formSent);
     err = httpPostData(jsonStringBuffer);
-    // taskEXIT_CRITICAL(&mux);
-    // long timeStart = esp_timer_get_time();
-    // do {
-    //     err = httpPostData(jsonStringBuffer);
-    //     ESP_LOGI(TAG, "POST FAILED");
-    //     ESP_LOGI(TAG, "RETRYING PENDING POST -- %s", jsonStringBuffer);
-    //     vTaskDelay(pdMS_TO_TICKS(100));
-    //     // 3 second retry timeout
-    //     if (esp_timer_get_time() - timeStart > 3 * 1000 * 1000) {
-    //         break;
-    //     }
-    // } while (err != ESP_OK);
 
     return err;
 }
@@ -122,13 +110,12 @@ esp_err_t httpFetchServerData() {
 esp_err_t httpParseServerData() {
     char *TAG = "httpParseServerData";
 
-    // taskENTER_CRITICAL(&mux);
-    portENTER_CRITICAL(&mux);
+    // portENTER_CRITICAL(&mux);
     if (formReceived) {
         cJSON_Delete(formReceived);
         formReceived = NULL;
     }
-    portEXIT_CRITICAL(&mux);
+    // portEXIT_CRITICAL(&mux);
     // Parse Json data from string. Note that cJSON dynamically allocates memory that must be freed later.
     formReceived = cJSON_Parse(HTTP_RESPONSE_DATA);
 
@@ -136,21 +123,21 @@ esp_err_t httpParseServerData() {
     if (formReceived == cJSON_Invalid || formReceived == NULL) {
         ESP_LOGI(TAG, "FAILED: Form receieved is invalid JSON");
         HTTP_ERROR = true;
-        portENTER_CRITICAL(&mux);
+        // portENTER_CRITICAL(&mux);
         if (formReceived) {
             cJSON_Delete(formReceived);
             formReceived = NULL;
         }
-        portEXIT_CRITICAL(&mux);
+        // portEXIT_CRITICAL(&mux);
 
         return ESP_FAIL;
     } else {
-        portENTER_CRITICAL(&mux);
+        // portENTER_CRITICAL(&mux);
         if (jsonStringBuffer) {
             cJSON_free(jsonStringBuffer);
             jsonStringBuffer = NULL;
         }
-        portEXIT_CRITICAL(&mux);
+        // portEXIT_CRITICAL(&mux);
         jsonStringBuffer = cJSON_PrintUnformatted(formReceived);
         ESP_LOGI(TAG, "%s", jsonStringBuffer);
         HTTP_ERROR = false;
@@ -171,12 +158,12 @@ esp_err_t httpParseServerData() {
                 // note that strcmp returns '0' if true
                 if (strcmp(str, USERNAME) == 0) {
                     ESP_LOGI(TAG, "JSON FAILED: 'USERNAME' of request is same as local device");
-                    portENTER_CRITICAL(&mux);
+                    // portENTER_CRITICAL(&mux);
                     // free the dynamically allocated memory. 
                     // Do not forget that the print functions also may allocate arrays. Free those as well!!!
                     cJSON_Delete(formReceived);
                     formReceived = NULL;
-                    portEXIT_CRITICAL(&mux);
+                    // portEXIT_CRITICAL(&mux);
                     err = ESP_FAIL;
                 }
 
@@ -255,12 +242,12 @@ esp_err_t httpParseServerData() {
             }
         }
 
-        portENTER_CRITICAL(&mux);
+        // portENTER_CRITICAL(&mux);
         // free the dynamically allocated memory. 
         // Do not forget that the print functions also may allocate arrays. Free those as well!!!
         cJSON_Delete(formReceived);
         formReceived = NULL;
-        portEXIT_CRITICAL(&mux);
+        // portEXIT_CRITICAL(&mux);
     }
 
     ESP_LOGI(TAG, "VALIDATION COMPLETE");

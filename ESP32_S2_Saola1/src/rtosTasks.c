@@ -32,7 +32,7 @@ void initializeRTOSTasks() {
 	ESP_LOGI(TAG, "initializing vTaskRTOSDebug");
 	xTaskCreate(vTaskRTOSDebug, "vTaskRTOSDebug", 4096, NULL, 24, &xHandleRTOSDebug);
 	configASSERT(xHandleRTOSDebug);
-	xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
+	// xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
 
 	ESP_LOGI(TAG, "initializing vTaskSleep");
 	// ESP_ERROR_CHECK(esp_sleep_enable_wifi_wakeup());
@@ -78,9 +78,9 @@ void initializeRTOSTasks() {
 	xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 9, &xHandleUpdateMotor);
 	configASSERT(xHandleUpdateMotor);
 
-	// ESP_LOGI(TAG, "initializing vTaskPollServer");
-	// xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 9, &xHandlePollServer);
-	// configASSERT(xHandlePollServer);
+	ESP_LOGI(TAG, "initializing vTaskPollServer");
+	xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 9, &xHandlePollServer);
+	configASSERT(xHandlePollServer);
 
 	// ESP_LOGI(TAG, "initializing vTaskSmartConfig");
 	// xTaskCreate(vTaskSmartConfig, "vTaskSmartConfig", 4096, NULL, 20, &xHandleSmartConfig);

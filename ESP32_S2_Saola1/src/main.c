@@ -62,49 +62,6 @@ void test(void *args) {
 
 }
 
-// void vTaskSmartConfig(void *args) {
-// 	char *TAG = "vTaskSmartConfig";
-// 	EventBits_t uxBits;
-
-// 	while(1) {
-// 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-
-// 		while (!ESP_SMARTCONFIG_STATUS) {
-// 			if (!RADIO_INITIALIZED) {
-// 				initializeWifi();
-// 			}
-// 			ESP_LOGI(TAG, "configuring smartconfig service");
-// 			ESP_ERROR_CHECK(esp_smartconfig_set_type(SC_TYPE_ESPTOUCH));
-// 			smartconfig_start_config_t cfg = {.enable_log = false};
-
-// 			ESP_LOGI(TAG, "starting smartconfig service");
-// 			esp_err_t err = esp_smartconfig_start(&cfg);
-// 			ESP_ERROR_CHECK(err);
-// 			if (err == ESP_OK) {
-// 				ESP_SMARTCONFIG_STATUS = true;
-// 				ESP_LOGI(TAG, "smartconfig service started successfully");
-// 			} else {
-// 				ESP_LOGI(TAG, "smartconfig service failed to initialize");
-// 			}
-			
-// 			vTaskDelay(1);			
-// 		}
-
-// 		while (1) {
-// 			uxBits = xEventGroupWaitBits(s_wifi_event_group, ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY);
-
-// 			if(uxBits & ESPTOUCH_DONE_BIT) {
-// 				ESP_LOGI(TAG, "smart config completed -- stopping service.");
-// 				esp_smartconfig_stop();
-// 				ESP_SMARTCONFIG_STATUS = false;
-// 				xEventGroupClearBits(xHandleSmartConfig, ESPTOUCH_DONE_BIT);
-// 			}
-// 			vTaskDelay(1);
-// 		}
-
-// 	}
-// }
-
 void app_main(void) {
 	// nvs_flash_erase();
 	esp_task_wdt_init(10, false);
@@ -114,12 +71,6 @@ void app_main(void) {
     hooks.malloc_fn = pvPortMalloc;
     hooks.free_fn = vPortFree;
     cJSON_InitHooks(&hooks);
-
-	// esp_pm_config_esp32s2_t cfg;
-	// esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
-	// cfg.light_sleep_enable = true;
-	// cfg.max_freq_mhz = 240;
-	// cfg.min_freq_mhz = 80;
 
 	/* *************initialize peripherials and resources here****************/
 	// configure gpio for peripiherials first
@@ -131,8 +82,10 @@ void app_main(void) {
 	vInitCurtainMotorConfig_0();		// Primary Motor Control	
 	initializeTimerConfig();				// Button interrupts
 
-	// pause for visual indication
+	// pause for LED visual indication
 	vTaskDelay(pdMS_TO_TICKS(2000));
+
+	// begin restoring the system's values from whatever it's previous state was.
 	if (nvsRestoreSystemState() == ESP_OK) {
 		// blink green twice if restored state sucessfully
 		for (short i = 0; i < 2; ++i) {
@@ -141,42 +94,33 @@ void app_main(void) {
 			setStatusLEDRed();
 			vTaskDelay(pdMS_TO_TICKS(100));
 		}
-		// flag sync will bypass the parsing of last command from server.
+		// flag sync will bypass the parsing of last command from server for the motor.
 		SYS_SYNC = true;
 	}
+
+	// pause so that the LED does not instantly change colors
 	vTaskDelay(pdMS_TO_TICKS(1000));
 
 	// system hardware initialized sucessfully. go status yellow
 	setStatusLEDYellow();
 
-	strcpy(WIFI_SSID, "wutangLAN");
-	strcpy(WIFI_PASSWORD, "c@$T131nTh3$Ky");
-	
-	// portENTER_CRITICAL(&mux);
-	// initializeHttpClient();
-	// portEXIT_CRITICAL(&mux);
-	// CURTAIN_PERCENTAGE = 0;
-	// MOTOR_POSITION_STEPS = 0;
+	// put in SSID/PWORD here for testing.
+	strcpy(WIFI_SSID, "...");
+	strcpy(WIFI_PASSWORD, "...");
 
+	// call rtos initializers. note some tasks are initialized in a blocking state.
 	initializeRTOSTasks();
 	vTaskDelay(pdMS_TO_TICKS(1000));
-	// initializeWifi();
-	// // esp_wifi_connect();
 
-	// initializeHttpClient();
-
-
-
-	// cJSON *object = cJSON_CreateObject();
-	// cJSON_AddNumberToObject(object, "CURTAIN_PERCENTAGE", CURTAIN_PERCENTAGE);
-	// cJSON_AddNumberToObject(object, "CURTAIN_PERCENTAGE_2", 42);
-	// cJSON_AddNumberToObject(object, "CURTAIN_PERCENTAGE_3", (double)CURTAIN_PERCENTAGE);
-	// CURTAIN_PERCENTAGE = 24.7584;
-	// cJSON_AddNumberToObject(object, "CURTAIN_PERCENTAGE_4", CURTAIN_PERCENTAGE);
-
-	// char *str = cJSON_PrintUnformatted(object);
-	// ESP_LOGI("SYSTEM", "cJSON: %s", str);
-	// cJSON_free(str);
-	// cJSON_Delete(object);
+	// RTOS task "vTaskWifiReconnect" runs endlessly as a service and reconnects if ap ever disconnected.
+	// the new update causes this task/service to block or/and trip the task wdt watchdog, wheras previously in
+	// 4.2.1 this was not an issue.
+	
+	// you can manually initialize the wifi by invoking this initializer. Otherwise, the RTOS service task will
+	// automatically configure and initializer the radio if the "RADIO_INITIALIZED" flag is not set to true..
+	
+	if (!RADIO_INITIALIZED) {
+		initializeWifi();
+	}
 }
 
