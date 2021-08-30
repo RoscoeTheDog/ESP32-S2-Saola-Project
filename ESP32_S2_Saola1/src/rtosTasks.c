@@ -766,7 +766,7 @@ void vTaskRTOSDebug( void * pvParameters){
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 		char buffer[2048];
-		vTaskList(buffer);
+		// vTaskList(buffer);
 		printf("%s\n", "**********************************");
 		printf("%s\n", "Task  State   Prio    Stack    Num");
 		printf("%s\n", buffer);
