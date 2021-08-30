@@ -74,6 +74,8 @@ void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
     char *TAG = "event_handler";
+    TaskHandle_t local_handle = xTaskGetCurrentTaskHandle();
+    vTaskPrioritySet(local_handle, 24);
 
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         // xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithOverwrite);
@@ -83,6 +85,7 @@ void event_handler(void* arg, esp_event_base_t event_base,
         // if (s_wifi_event_group && eTaskGetState(s_wifi_event_group) != eRunning || eTaskGetState(s_wifi_event_group) != eReady) {
         //     xTaskCreate(vTaskSmartConfig, "vTaskSmartConfig", 4096, NULL, 22, NULL);
         // }
+
         // xTaskCreate(vTaskNVSConnect, "NVSConnect", 4096, NULL, 1, xHandleNVSConnect);
         // vTaskDelay(pdMS_TO_TICKS(500));
         // xTaskNotifyFromISR(xHandleNVSConnect, 1, eSetValueWithOverwrite, NULL);
@@ -199,13 +202,12 @@ void initializeWifi(void) {
     ESP_LOGI(TAG, "initializing wireless radio");
     ESP_ERROR_CHECK(esp_netif_init());
     s_wifi_event_group = xEventGroupCreate();
-    // TaskHandle_t handle;
-    // char *name = "wifi";
-    // handle = xTaskGetHandle("wifi");
-    // vTaskPrioritySet(&handle, 1);
 
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    // esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+    // assert(ap_netif);
     assert(sta_netif);
 
     // initialize the NVS flash

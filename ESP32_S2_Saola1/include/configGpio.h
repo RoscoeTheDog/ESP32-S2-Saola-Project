@@ -10,8 +10,8 @@
 #define RGB_PIN_BLUE GPIO_NUM_36
 #define RGB_PIN_BLUE_SEL GPIO_SEL_36
 
-#define LIMIT_SWITCH_PIN GPIO_NUM_16
-#define LIMIT_SWITCH_PIN_SEL GPIO_SEL_16
+#define LIMIT_SWITCH_PIN GPIO_NUM_5
+#define LIMIT_SWITCH_PIN_SEL GPIO_SEL_5
 
 #define SMARTCONFIG_PAIR_SWITCH GPIO_NUM_15
 #define SMARTCONFIG_PAIR_SWITCH_SEL GPIO_SEL_15
@@ -26,8 +26,7 @@
 #define EN_PIN_SEL GPIO_SEL_0
 
 #define BTN_0_INPUT_PIN GPIO_NUM_21
-#define BTN_0_INPUT_PIN_SEL GPIO_SEL_21
-extern volatile bool BTN_0_INPUT_PIN_STATE;		// holding in memory is faster for the ISR than re-evaluating GPIO state each time.
+#define BTN_0_INPUT_PIN_SEL GPIO_SEL_21	// holding in memory is faster for the ISR than re-evaluating GPIO state each time.
 
 #define BTN_0_LED_OUT_PIN GPIO_NUM_19
 #define BTN_0_LED_OUT_PIN_SEL GPIO_SEL_19
@@ -39,7 +38,6 @@ extern volatile bool BTN_0_INPUT_PIN_STATE;		// holding in memory is faster for 
 
 #define BTN_1_INPUT_PIN GPIO_NUM_26
 #define BTN_1_INPUT_PIN_SEL GPIO_SEL_26
-extern volatile bool BTN_1_INPUT_PIN_STATE;
 
 extern volatile bool ESP_SMARTCONFIG_STATUS;
 

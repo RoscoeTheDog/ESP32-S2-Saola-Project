@@ -39,7 +39,7 @@ esp_err_t initializeHttpClient() {
     } else {
         // we do not want any tasks to interrupt the freeing/re-init of the client object.
         // portENTER_CRITICAL(&mux);
-        ESP_LOGD(TAG, "deinitializing http client");
+        ESP_LOGI(TAG, "deinitializing http client");
         err = esp_http_client_close(client);
         ESP_LOGI(TAG, "initializing new http client");
         client = esp_http_client_init(&config);
@@ -73,6 +73,7 @@ esp_err_t httpPostData(char *c) {
         // set field data
         err = esp_http_client_set_post_field(client, c, strlen(c));
         err = esp_http_client_perform(client);
+        break;
     }
 
     return err;
@@ -359,13 +360,12 @@ esp_err_t httpValidateFormSubmission(char *form) {
     return ESP_OK;
 }
 
-esp_err_t http_event_handler(esp_http_client_event_t *evt)
-{
+esp_err_t http_event_handler(esp_http_client_event_t *evt) {
     TaskHandle_t local_task = xTaskGetCurrentTaskHandle();
-    vTaskPrioritySet(local_task, 22);
-
     char *TAG = "http_event_handler";
-    ESP_LOGD(TAG, "TASK AVAILABLE HEAP: %i", xPortGetFreeHeapSize());
+    TaskHandle_t local_handle = xTaskGetCurrentTaskHandle();
+    vTaskPrioritySet(local_handle, 24);
+    
     switch(evt->event_id) {
         case HTTP_EVENT_ERROR:
             // ESP_LOGI(TAG, "HTTP_EVENT_ERROR");
@@ -383,7 +383,7 @@ esp_err_t http_event_handler(esp_http_client_event_t *evt)
         case HTTP_EVENT_ON_DATA:
             // ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
             if (!esp_http_client_is_chunked_response(evt->client)) {
-                ESP_LOGI(TAG, "SERVER RESPONSE: %.*s", evt->data_len, (char*)evt->data);
+                // ESP_LOGI(TAG, "SERVER RESPONSE: %.*s", evt->data_len, (char*)evt->data);
                 // update the global event data so the running task can parse it after it is signaled
                 memcpy(HTTP_RESPONSE_DATA, evt->data, sizeof(char) * evt->data_len);
             }
@@ -391,7 +391,7 @@ esp_err_t http_event_handler(esp_http_client_event_t *evt)
             break;
         case HTTP_EVENT_ON_FINISH:
             // ESP_LOGI(TAG, "HTTP_EVENT_ON_FINISH");
-            ESP_LOGI(TAG, "Status = %d, content_length = %d", esp_http_client_get_status_code(client), esp_http_client_get_content_length(client));
+            ESP_LOGI(TAG, "Status %d, content_length %d, Reponse: %s", esp_http_client_get_status_code(client), esp_http_client_get_content_length(client), HTTP_RESPONSE_DATA);
             break;
         case HTTP_EVENT_DISCONNECTED:
             // ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");

@@ -24,6 +24,7 @@
 #include <cJSON.h>
 #include <cJSON_Utils.h>
 #include <espInterrupts.h>
+#include <limits.h>
 
 // Reconfigure default settings for this project via header. More reliable if framework gets reset to defaults somehow.
 // #ifdef CONFIG_FREERTOS_HZ

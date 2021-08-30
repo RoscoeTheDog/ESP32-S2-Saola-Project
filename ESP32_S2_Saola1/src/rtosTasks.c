@@ -32,7 +32,7 @@ void initializeRTOSTasks() {
 	ESP_LOGI(TAG, "initializing vTaskRTOSDebug");
 	xTaskCreate(vTaskRTOSDebug, "vTaskRTOSDebug", 4096, NULL, 24, &xHandleRTOSDebug);
 	configASSERT(xHandleRTOSDebug);
-	// xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
+	xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithOverwrite);
 
 	ESP_LOGI(TAG, "initializing vTaskSleep");
 	// ESP_ERROR_CHECK(esp_sleep_enable_wifi_wakeup());
@@ -56,35 +56,35 @@ void initializeRTOSTasks() {
 	xTaskCreate(vTaskMoveStepperReverse, "curtainStepperReverse", 2048, NULL, 22, &xHandleMoveStepperReverse);
 	configASSERT(xHandleMoveStepperReverse);
 
-	// ESP_LOGI(TAG, "initializing vTaskWifiReconnect");
-	// xTaskCreate(vTaskWifiReconnect, "vTaskWifiReconnect", 2048, NULL, 22, &xHandleWifiReconnect);
-	// configASSERT(xHandleWifiReconnect);
-	// xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithoutOverwrite);
+	ESP_LOGI(TAG, "initializing vTaskWifiReconnect");
+	xTaskCreate(vTaskWifiReconnect, "vTaskWifiReconnect", 4096, NULL, 22, &xHandleWifiReconnect);
+	configASSERT(xHandleWifiReconnect);
+	xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithoutOverwrite);
 
 	ESP_LOGI(TAG, "initializing vTaskHomeCurtains");
 	xTaskCreate(vTaskHomeCurtains, "vTaskHomeCurtains", 2048, NULL, 20, &xHandleHomeCurtains);
 	configASSERT(xHandleHomeCurtains);
 
-	// ESP_LOGI(TAG, "initializing vTaskSubmitLocalData");
-	// xTaskCreate(vTaskSubmitLocalData, "vTaskSubmitLocalData", 4096, NULL, 10, &xHandleSubmitLocalData);
-	// configASSERT(xHandleSubmitLocalData);
+	ESP_LOGI(TAG, "initializing vTaskPersistingWifiTasks");
+	xTaskCreate(vTaskPersistingWifiTasks, "vTaskPersistingWifiTasks", 2048, NULL, 20, &xHandleWifiPersistingTasks);
+	configASSERT(xHandleWifiPersistingTasks);
+	// xTaskNotify(xHandleWifiPersistingTasks, 1, eSetValueWithoutOverwrite);
+
+	ESP_LOGI(TAG, "initializing vTaskSubmitLocalData");
+	xTaskCreate(vTaskSubmitLocalData, "vTaskSubmitLocalData", 4096, NULL, 10, &xHandleSubmitLocalData);
+	configASSERT(xHandleSubmitLocalData);
 
 	ESP_LOGI(TAG, "initializing vTaskUpdateMotor");
 	xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 9, &xHandleUpdateMotor);
 	configASSERT(xHandleUpdateMotor);
 
-	ESP_LOGI(TAG, "initializing vTaskPollServer");
-	xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 9, &xHandlePollServer);
-	configASSERT(xHandlePollServer);
+	// ESP_LOGI(TAG, "initializing vTaskPollServer");
+	// xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 9, &xHandlePollServer);
+	// configASSERT(xHandlePollServer);
 
-	ESP_LOGI(TAG, "initializing vTaskSmartConfig");
-	xTaskCreate(vTaskSmartConfig, "vTaskSmartConfig", 4096, NULL, 20, &xHandleSmartConfig);
-	configASSERT(xHandleSmartConfig);
-
-	ESP_LOGI(TAG, "initializing vTaskPersistingWifiTasks");
-	xTaskCreate(vTaskPersistingWifiTasks, "vTaskPersistingWifiTasks", 2048, NULL, 20, &xHandleWifiPersistingTasks);
-	configASSERT(xHandleWifiPersistingTasks);
-	xTaskNotify(xHandleWifiPersistingTasks, 1, eSetValueWithoutOverwrite);
+	// ESP_LOGI(TAG, "initializing vTaskSmartConfig");
+	// xTaskCreate(vTaskSmartConfig, "vTaskSmartConfig", 4096, NULL, 20, &xHandleSmartConfig);
+	// configASSERT(xHandleSmartConfig);
 }
 
 void vTaskHomeCurtains(void *args) {
@@ -93,11 +93,19 @@ void vTaskHomeCurtains(void *args) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 
 		if(!LIMIT_SWITCH_STATE) {
-			// notify max number of times. will run indefinately until ISR stops it
-			xTaskNotify(xHandleMoveStepperForward, ULONG_MAX - 1, eSetValueWithOverwrite);
-			xTaskNotify(xHandleHomeCurtains, 1, eSetValueWithoutOverwrite);
+			
+			if (xHandleMoveStepperForward) {
+				// notify max number of times. will run indefinately until ISR stops it
+				xTaskNotify(xHandleMoveStepperForward, ULONG_MAX - 1, eSetValueWithOverwrite);
+			}
+			if (xHandleHomeCurtains) {
+				xTaskNotify(xHandleHomeCurtains, 1, eSetValueWithoutOverwrite);
+			}
+			
 		}	else {
-			xTaskNotify(xHandleHomeCurtains, 0, eSetValueWithoutOverwrite);
+			if (xHandleHomeCurtains) {
+				xTaskNotify(xHandleHomeCurtains, 0, eSetValueWithoutOverwrite);
+			}
 		}
 		
  	}
@@ -143,6 +151,11 @@ void vTaskWifiReconnect(void *args) {
             ESP_LOGI(TAG, "PASSWORD: %s", (char*)wifi_config.sta.password);
 
 			esp_task_wdt_reset();
+
+			if (!RADIO_INITIALIZED) {
+				initializeWifi();
+			}
+
             esp_err_t err = esp_wifi_connect();
             if (err == ESP_OK) {
                 WIFI_CONNECTED = true;
@@ -151,6 +164,9 @@ void vTaskWifiReconnect(void *args) {
 				WIFI_CONNECTED = false;
 				ESP_LOGI(TAG, "ESP_ERR_WIFI_SSID returned. Incorrrect wifi credentials saved.");
 			}
+			if (err != ESP_OK) {
+				ESP_ERROR_CHECK(err);
+			}			
 
 			esp_task_wdt_reset();
             vTaskDelay(pdMS_TO_TICKS(1000));
@@ -269,7 +285,7 @@ void vTaskStatusLEDWatchdog( void *args) {
 	short num_blinks;
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-
+		
 		if (WIFI_CONNECTED && !DATETIME_SYNC) {
 			ESP_LOGI(TAG, "SYSTEM WAITING ON DATETIME SYNC");
 			setStatusLEDYellow();
@@ -298,6 +314,9 @@ void vTaskStatusLEDWatchdog( void *args) {
 		if (!WIFI_CONNECTED) {
 			setStatusLEDGreen();
 		}
+		if (HOMING) {
+			setStatusLEDYellow();
+		}
 
 		// the frequency of the light indicator in MS
 		vTaskDelay(pdMS_TO_TICKS(1000));
@@ -311,11 +330,10 @@ void vTaskPollServer(void * args) {
 
 	while(true) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+
 		// wrap in while loop for faster exit in event disconnect (shouldn't be needed but safety)
 		while (xHandleSubmitLocalData != NULL && eTaskGetState(xHandleSubmitLocalData) != eReady && eTaskGetState(xHandleSubmitLocalData) != eRunning) {
-			
 			if (WIFI_CONNECTED && DATETIME_SYNC) { 
-			
 				if (httpFetchServerData() != ESP_OK) {
 					HTTP_ERROR = true;
 					initializeHttpClient();
@@ -434,6 +452,10 @@ void vTaskSubmitLocalData(void *args) {
 
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+		cJSON_Hooks hooks;
+		hooks.malloc_fn = pvPortMalloc;
+		hooks.free_fn = vPortFree;
+		cJSON_InitHooks(&hooks);
 
 		// if notified of a local move update, then update the local nvs values as well.
 		nvsWriteBlob("init", "MOTOR_STEPS", &MOTOR_POSITION_STEPS, sizeof(long));
@@ -441,7 +463,6 @@ void vTaskSubmitLocalData(void *args) {
 
 		// cancel request if the system is not synced with the server
 		if (!SYS_SYNC) {
-			xTaskNotify(xHandleSubmitLocalData, 0, eSetValueWithOverwrite);
 			continue;
 		}
 
@@ -456,11 +477,11 @@ void vTaskSubmitLocalData(void *args) {
 		cJSON_AddStringToObject(formSent, "WRITE_KEY", WRITE_KEY);
 		cJSON_AddStringToObject(formSent, "DeviceID", LOCAL_DEVICE_ID);
 		cJSON_AddStringToObject(formSent, "USERNAME", USERNAME);
-		
-		// https://www.cplusplus.com/reference/cstdio/sprintf/
-		char buffer[512];
-		sprintf(buffer, "%f", CURTAIN_PERCENTAGE);
-		cJSON_AddStringToObject(formSent, "CURTAIN_PERCENTAGE", buffer);
+		cJSON_AddNumberToObject(formSent, "CURTAIN_PERCENTAGE", CURTAIN_PERCENTAGE);
+		// // // https://www.cplusplus.com/reference/cstdio/sprintf/
+		// // char buffer[512];
+		// // sprintf(buffer, "%f", CURTAIN_PERCENTAGE);
+		// // cJSON_AddStringToObject(formSent, "CURTAIN_PERCENTAGE", buffer);
 
 		portENTER_CRITICAL(&mux); 
 		if (jsonStringBuffer) {
@@ -480,7 +501,6 @@ void vTaskSubmitLocalData(void *args) {
 			// portEXIT_CRITICAL(&mux);
 		}
 		if (err == ESP_OK) {
-
 			portENTER_CRITICAL(&mux); 
 			if (jsonStringBuffer) {
 				cJSON_free(jsonStringBuffer);
@@ -516,20 +536,17 @@ void vTaskSubmitLocalData(void *args) {
 			xTaskNotify(xHandleSubmitLocalData, 1, eSetValueWithoutOverwrite);
 		}
 
-		// portENTER_CRITICAL(&mux);
-		// if (xHandlePollServer == NULL) {
-		// 	xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 10, &xHandlePollServer);
-		// 	configASSERT(xHandlePollServer);
-		// 	xTaskNotify(xHandlePollServer, 1, eSetValueWithOverwrite);
-		// }
-		// portEXIT_CRITICAL(&mux);
+		portENTER_CRITICAL(&mux);
+		if (xHandlePollServer == NULL) {
+			xTaskCreate(vTaskPollServer, "vTaskPollServer", 4096, NULL, 10, &xHandlePollServer);
+			configASSERT(xHandlePollServer);
+			xTaskNotify(xHandlePollServer, 1, eSetValueWithOverwrite);
+		}
+		portEXIT_CRITICAL(&mux);
 
-		
-
-
-		// vTaskDelay(1);
-		// esp_task_wdt_reset();
-		// esp_task_wdt_delete(xHandleSubmitLocalData);
+		vTaskDelay(1);
+		esp_task_wdt_reset();
+		esp_task_wdt_delete(xHandleSubmitLocalData);
 	}
 
 
@@ -549,21 +566,29 @@ void vTaskMoveStepperForward(void * pvPerameters) {
 		esp_task_wdt_add(xHandleMoveStepperForward);
 
 		if (xHandleSubmitLocalData && (eTaskGetState(xHandleSubmitLocalData) == eRunning || eTaskGetState(xHandleSubmitLocalData) == eReady) ) {
-			xTaskNotify(xHandleSubmitLocalData, 0, eSetValueWithoutOverwrite);
+			xTaskNotify(xHandleSubmitLocalData, 0, eSetValueWithOverwrite);
 		}
 
-		// if (xHandleWifiPersistingTasks) {
-		// 	xTaskNotify(xHandleWifiPersistingTasks, 0, eSetValueWithoutOverwrite);
+		if (xHandleWifiPersistingTasks) {
+			xTaskNotify(xHandleWifiPersistingTasks, 0, eSetValueWithOverwrite);
+		}
+
+		// if (xHandlePollServer && eTaskGetState(xHandlePollServer) != eSuspended) {
+		// 	vTaskSuspend(xHandlePollServer);
 		// }
 
-		if (xHandleWifiPersistingTasks && eTaskGetState(xHandleWifiPersistingTasks) != eSuspended) {
-			vTaskSuspend(xHandleWifiPersistingTasks);
-		}
+		// if (xHandleWifiPersistingTasks && eTaskGetState(xHandleWifiPersistingTasks) != eSuspended) {
+		// 	vTaskSuspend(xHandleWifiPersistingTasks);
+		// }
 
 		// TODO: make this account for the material thickness around the rod dynamically
 		length_mm = CURTAIN_LENGTH_INCH * 25.4;
 		circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
 		MOTOR_STEP_LIMIT = StepperMotor_1->Config->microstepping * StepperMotor_1->Config->motor_steps * (length_mm/circumference_mm);
+		
+		if (HOMING) {
+			MOTOR_STEP_LIMIT = INT_MAX;
+		}
 		portENTER_CRITICAL(&mux);
 		if (MOTOR_POSITION_STEPS < MOTOR_STEP_LIMIT) {
 			// keep moving motor in intervals unless it is smaller than a single interval period
@@ -574,20 +599,18 @@ void vTaskMoveStepperForward(void * pvPerameters) {
 				move(StepperMotor_1, MOTOR_STEP_LIMIT - MOTOR_POSITION_STEPS);
 				MOTOR_POSITION_STEPS += MOTOR_STEP_LIMIT - MOTOR_POSITION_STEPS;
 			}
-			// update globals (motor_position_steps / maximum_step_length)
-			CURTAIN_PERCENTAGE = MOTOR_POSITION_STEPS / (float)calcStepsForRotation(StepperMotor_1, (length_mm / circumference_mm) * 360) * 100;
+			if (!HOMING) {
+				// update globals (motor_position_steps / maximum_step_length)
+				CURTAIN_PERCENTAGE = MOTOR_POSITION_STEPS / (float)calcStepsForRotation(StepperMotor_1, (length_mm / circumference_mm) * 360) * 100;
+			}
 		}
 		portEXIT_CRITICAL(&mux);
 
 		// Reset the wdt from this running task
 		esp_task_wdt_reset();
 
-		if (!BTN_0_PIN_STATE && !BTN_1_PIN_STATE) {
-
-			if (xHandleSubmitLocalData) {
-				xTaskNotify(xHandleSubmitLocalData, 1, eSetValueWithoutOverwrite);
-			}
-
+		if (xHandleSubmitLocalData) {
+			xTaskNotify(xHandleSubmitLocalData, 1, eSetValueWithOverwrite);
 		}
 
 		// block this task for just a moment to allow other ready tasks not to starve out the watchdog.
@@ -605,14 +628,18 @@ void vTaskMoveStepperReverse(void * pvPerameters) {
 	int	circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
 	int MOTOR_STEP_LIMIT = StepperMotor_1->Config->microstepping * StepperMotor_1->Config->motor_steps * (length_mm/circumference_mm);
 	int interval = calcStepsForRotation(StepperMotor_1, 1);
-	
+
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 		esp_task_wdt_add(xHandleMoveStepperReverse);
 
-		if (xHandleWifiPersistingTasks && eTaskGetState(xHandleWifiPersistingTasks) != eSuspended) {
-			vTaskSuspend(xHandleWifiPersistingTasks);
+		if (xHandleSubmitLocalData && (eTaskGetState(xHandleSubmitLocalData) == eRunning || eTaskGetState(xHandleSubmitLocalData) == eReady) ) {
+			xTaskNotify(xHandleSubmitLocalData, 0, eSetValueWithOverwrite);
 		}
+
+		// if (xHandlePollServer && eTaskGetState(xHandlePollServer) != eSuspended) {
+		// 	vTaskSuspend(xHandlePollServer);
+		// }
 
 		// TODO: make this account for the material thickness around the rod dynamically
 		length_mm = CURTAIN_LENGTH_INCH * 25.4;
@@ -739,11 +766,11 @@ void vTaskRTOSDebug( void * pvParameters){
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
 		char buffer[2048];
-		// vTaskList(buffer);
-		// printf("%s\n", "**********************************");
-		// printf("%s\n", "Task  State   Prio    Stack    Num");
-		// printf("%s\n", buffer);
-		// printf("%s\n", "**********************************");
+		vTaskList(buffer);
+		printf("%s\n", "**********************************");
+		printf("%s\n", "Task  State   Prio    Stack    Num");
+		printf("%s\n", buffer);
+		printf("%s\n", "**********************************");
 
 		vTaskDelay(pdMS_TO_TICKS(500));
 		xTaskNotify(xHandleRTOSDebug, 1, eSetValueWithoutOverwrite);

@@ -38,8 +38,6 @@ extern void toggleSmartConfig(void * parm);
 
 extern void updateWifiConfig();
 
-extern void prototypeHttp();
-
 extern void vInitTaskSmartConfig(void *pvParameters);
 
 extern void toggleSmartConfig(void * pvParameters);

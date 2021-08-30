@@ -106,8 +106,6 @@ void test(void *args) {
 // }
 
 void app_main(void) {
-
-	esp_log_level_set("WIFI", ESP_LOG_VERBOSE);
 	// nvs_flash_erase();
 	esp_task_wdt_init(10, false);
 
@@ -151,16 +149,34 @@ void app_main(void) {
 	// system hardware initialized sucessfully. go status yellow
 	setStatusLEDYellow();
 
-	// initialize rtos tasks
+	strcpy(WIFI_SSID, "wutangLAN");
+	strcpy(WIFI_PASSWORD, "c@$T131nTh3$Ky");
+	
+	// portENTER_CRITICAL(&mux);
+	// initializeHttpClient();
+	// portEXIT_CRITICAL(&mux);
+	// CURTAIN_PERCENTAGE = 0;
+	// MOTOR_POSITION_STEPS = 0;
+
 	initializeRTOSTasks();
-
-	// pause for visual indication
-	vTaskDelay(pdMS_TO_TICKS(2000));
-
-	// temporary work around until we figure out what we're doing with the smarconfig feature
+	vTaskDelay(pdMS_TO_TICKS(1000));
 	// initializeWifi();
+	// // esp_wifi_connect();
 
-	xTaskNotify(xHandleSmartConfig, 1, eSetValueWithOverwrite);
+	// initializeHttpClient();
 
+
+
+	// cJSON *object = cJSON_CreateObject();
+	// cJSON_AddNumberToObject(object, "CURTAIN_PERCENTAGE", CURTAIN_PERCENTAGE);
+	// cJSON_AddNumberToObject(object, "CURTAIN_PERCENTAGE_2", 42);
+	// cJSON_AddNumberToObject(object, "CURTAIN_PERCENTAGE_3", (double)CURTAIN_PERCENTAGE);
+	// CURTAIN_PERCENTAGE = 24.7584;
+	// cJSON_AddNumberToObject(object, "CURTAIN_PERCENTAGE_4", CURTAIN_PERCENTAGE);
+
+	// char *str = cJSON_PrintUnformatted(object);
+	// ESP_LOGI("SYSTEM", "cJSON: %s", str);
+	// cJSON_free(str);
+	// cJSON_Delete(object);
 }
 

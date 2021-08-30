@@ -28,58 +28,58 @@ inline bool IRAM_ATTR xISR_button_0(void * args) {
 	// Poll the buttons for any changes.
 	updateButtonsState();
 	
-	if(SMARTCONFIG_SWITCH_STATE) {
+// 	if(SMARTCONFIG_SWITCH_STATE) {
 
-		// if (!ESP_SMARTCONFIG_STATUS && RADIO_INITIALIZED) {
+// 		// if (!ESP_SMARTCONFIG_STATUS && RADIO_INITIALIZED) {
 
-		// 	// if (!RADIO_INITIALIZED) {
-		// 	// 	initializeWifi();
-		// 	// }
-		// 	esp_smartconfig_set_type(SC_TYPE_ESPTOUCH);
-		// 	smartconfig_start_config_t cfg = {.enable_log = false};
+// 		// 	// if (!RADIO_INITIALIZED) {
+// 		// 	// 	initializeWifi();
+// 		// 	// }
+// 		// 	esp_smartconfig_set_type(SC_TYPE_ESPTOUCH);
+// 		// 	smartconfig_start_config_t cfg = {.enable_log = false};
 
-		// 	esp_err_t err = esp_smartconfig_start(&cfg);
-		// 	// ESP_ERROR_CHECK(err);
-		// 	if (err == ESP_OK) {
-		// 		ESP_SMARTCONFIG_STATUS = true;
-		// 	}
-		// }
+// 		// 	esp_err_t err = esp_smartconfig_start(&cfg);
+// 		// 	// ESP_ERROR_CHECK(err);
+// 		// 	if (err == ESP_OK) {
+// 		// 		ESP_SMARTCONFIG_STATUS = true;
+// 		// 	}
+// 		// }
 
-		if (xHandleSmartConfig && (eTaskGetState(xHandleSmartConfig) != eRunning || eTaskGetState(xHandleSmartConfig) != eReady)) {
-			xTaskNotify(xHandleSmartConfig, 1, eSetValueWithOverwrite);
-		}
+// 		if (xHandleSmartConfig && (eTaskGetState(xHandleSmartConfig) != eRunning || eTaskGetState(xHandleSmartConfig) != eReady)) {
+// 			xTaskNotify(xHandleSmartConfig, 1, eSetValueWithOverwrite);
+// 		}
 		
 
-		// if (!ESP_SMARTCONFIG_STATUS) {
+// 		// if (!ESP_SMARTCONFIG_STATUS) {
 
-		// 	if (!RADIO_INITIALIZED) {
-		// 		initializeWifi();u
-		// 	}
-		// 	ESP_LOGI(TAG, "configuring smartconfig service");
-		// 	ESP_ERROR_CHECK(esp_smartconfig_set_type(SC_TYPE_ESPTOUCH));
-		// 	smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
+// 		// 	if (!RADIO_INITIALIZED) {
+// 		// 		initializeWifi();u
+// 		// 	}
+// 		// 	ESP_LOGI(TAG, "configuring smartconfig service");
+// 		// 	ESP_ERROR_CHECK(esp_smartconfig_set_type(SC_TYPE_ESPTOUCH));
+// 		// 	smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
 
-		// 	ESP_LOGI(TAG, "starting smartconfig service");
-		// 	esp_err_t err = esp_smartconfig_start(&cfg);
-		// 	ESP_ERROR_CHECK(err);
-		// 	if (err == ESP_OK) {
-		// 		ESP_SMARTCONFIG_STATUS = true;
-		// 		ESP_LOGI(TAG, "smartconfig service started successfully!");
-		// 	}
+// 		// 	ESP_LOGI(TAG, "starting smartconfig service");
+// 		// 	esp_err_t err = esp_smartconfig_start(&cfg);
+// 		// 	ESP_ERROR_CHECK(err);
+// 		// 	if (err == ESP_OK) {
+// 		// 		ESP_SMARTCONFIG_STATUS = true;
+// 		// 		ESP_LOGI(TAG, "smartconfig service started successfully!");
+// 		// 	}
 			
-	} else {
+// 	} else {
+// ;
+// 		if (xHandleSmartConfig && (eTaskGetState(xHandleSmartConfig) == eRunning || eTaskGetState(xHandleSmartConfig) == eReady)) {
+// 			xTaskNotify(xHandleSmartConfig, 0, eSetValueWithOverwrite);
+// 		}
 
-		if (xHandleSmartConfig && (eTaskGetState(xHandleSmartConfig) == eRunning || eTaskGetState(xHandleSmartConfig) == eReady)) {
-			xTaskNotify(xHandleSmartConfig, 0, eSetValueWithOverwrite);
-		}
-
-		// esp_err_t err = esp_smartconfig_stop();
-		// ESP_ERROR_CHECK(err);
-		// if (err == ESP_OK) {
-		// 	ESP_LOGI(TAG, "smartconfig service stopped!");
-		// 	ESP_SMARTCONFIG_STATUS = false;
-		// }
-	}
+// 		// esp_err_t err = esp_smartconfig_stop();
+// 		// ESP_ERROR_CHECK(err);
+// 		// if (err == ESP_OK) {
+// 		// 	ESP_LOGI(TAG, "smartconfig service stopped!");
+// 		// 	ESP_SMARTCONFIG_STATUS = false;
+// 		// }
+// 	}
 	
 	
 	if (LIMIT_SWITCH_STATE) {
@@ -96,9 +96,10 @@ inline bool IRAM_ATTR xISR_button_0(void * args) {
 		float circumference_mm = 2 * M_PI * (ROD_DIAMETER_MM/2);
 		int MOTOR_STEP_LIMIT = StepperMotor_1->Config->microstepping * StepperMotor_1->Config->motor_steps * (length_mm/circumference_mm);
 		CURTAIN_PERCENTAGE = 100;
+		HOMING = false;
 	}
 
-	if (BTN_0_PIN_STATE){
+	if (BTN_0_PIN_STATE && !BTN_1_PIN_STATE){
 		setLEDHigh();
 
 		// immediately suspend motor tasks if running.
@@ -122,12 +123,12 @@ inline bool IRAM_ATTR xISR_button_0(void * args) {
 	}
 
 	// TODO: Button 2
-	if (BTN_1_PIN_STATE) {
+	if (BTN_1_PIN_STATE && !BTN_0_PIN_STATE) {
 		// Update the duty cycle of the LED PWM
 		setLEDHigh();
 
 		// immediately suspend motor tasks if running.
-		if (xHandleUpdateMotor != NULL && (eTaskGetState(xHandleUpdateMotor) == eRunning || eTaskGetState(xHandleUpdateMotor) == eReady) ) {
+		if (xHandleUpdateMotor && (eTaskGetState(xHandleUpdateMotor) == eRunning || eTaskGetState(xHandleUpdateMotor) == eReady) ) {
 			nvsWriteBlob("init", "MOTOR_STEPS", &MOTOR_POSITION_STEPS, sizeof(long));
 			vTaskDelete(xHandleUpdateMotor);
 			xTaskCreate(vTaskUpdateMotor, "vTaskUpdateMotor", 4096, NULL, 9, &xHandleUpdateMotor);
@@ -215,6 +216,29 @@ inline bool IRAM_ATTR xISR_button_0(void * args) {
 			xTaskNotifyFromISR(xHandleLEDFade, 1, eSetValueWithOverwrite, &xHigherPriorityTaskWoken);
 		}
 
+	}
+
+	if (BTN_0_PIN_STATE && BTN_1_PIN_STATE) {
+		
+		// set initial value if not done
+		if(!BUTTON_HOLD_TIMER) {
+			BUTTON_HOLD_TIMER = esp_timer_get_time();
+		}
+
+		// TODO: FIX DEBOUNCING ISSUES.
+		// check if buttons have been held 5 seconds
+		if (esp_timer_get_time() - BUTTON_HOLD_TIMER > 5 * 1000000) {
+
+			if (!LIMIT_SWITCH_STATE) {
+				HOMING = true;
+				xTaskNotify(xHandleMoveStepperForward, ULONG_MAX - 1, eSetValueWithOverwrite);
+			}
+
+		}
+
+	} else {
+		// reset the timer if both buttons are unpressed
+		BUTTON_HOLD_TIMER = 0;
 	}
 
 	return true;
