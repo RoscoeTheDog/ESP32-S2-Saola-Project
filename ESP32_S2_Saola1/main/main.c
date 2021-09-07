@@ -17,7 +17,7 @@ extern "C" {
 	#include <stdlib.h>
 	#include <string.h>
 	#include <esp_timer.h>
-	#include <freeRTOS/FreeRTOS.h>
+	#include <freertos/FreeRTOS.h>
 
 	#include <configGpio.h>
 	#include <configLedc.h>
@@ -106,9 +106,6 @@ void app_main(void) {
 	// system hardware initialized sucessfully. go status yellow
 	setStatusLEDYellow();
 
-	// initialize rtos tasks
-	initializeTasks();
-
 	// pause for visual indication
 	vTaskDelay(pdMS_TO_TICKS(2000));
 
@@ -119,6 +116,8 @@ void app_main(void) {
 	// status gets updated in wifi event handler
 	initializeWifi();
 
+	// initialize rtos tasks
+	initializeTasks();
 
 	// vTaskDelay(pdMS_TO_TICKS(5000));
 

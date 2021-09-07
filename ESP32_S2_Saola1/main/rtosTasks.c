@@ -107,7 +107,6 @@ void vTaskWifiReconnect(void *args) {
 
 	while(1) {
 		ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
-		esp_task_wdt_add(xHandleWifiReconnect);
 
         if (!WIFI_CONNECTED) {
 			// update the wifi config with whatever is saved in globals.h
@@ -129,12 +128,7 @@ void vTaskWifiReconnect(void *args) {
 			esp_task_wdt_reset();
             vTaskDelay(pdMS_TO_TICKS(1000));
         }
-		// enforce task wdt reset
-		esp_task_wdt_reset();
-		// unschedule before getting blocked
-		esp_task_wdt_delete(xHandleWifiReconnect);
-		// delay for 1 ms, allowing other tasks with lower priority to run during this time.
-		vTaskDelay(pdMS_TO_TICKS(1));
+		vTaskDelay(1);
 		// continue running the task unless otherwise blocked or deleted
 		xTaskNotify(xHandleWifiReconnect, 1, eSetValueWithoutOverwrite);
 	}
