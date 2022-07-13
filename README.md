@@ -19,8 +19,9 @@ The purpose of this project was to give me more insights and experience in an em
 
 # Design notes:
 * The current CAD design for the smart blinds works and is compact, but the nema17 motors inside are just barely strong enough to rotate a single window's PVC pipe rod at a reasonable speed. I would instead like to replace it with a wormgear motor inside along with magnet actuators on the bottom of the curtains and windows to stop the motor.
+* A webserver is needed to read and save the requests from a smartphone to the smart blinds device. This works well for private use, but for an individual without experience in web app development it would be hard for an average person to integrate it into their project. An alternative like websockets would work better for pure local use and is easier to set up. With my testing I was using IFTT as it is a free app/service that integrates with Google Voice very easily and is on both Android/iOS. An IFTT command would send an HTTP request with body of JSON data to the webserver, which it would then parse and save in it's database. When the smart blinds polls and requests the servers data every one second, it will update the global variables states in the firmware, and then move to the motors to the corresponding positions.
 
-To install the firmware:
+# Installing the firmware:
 
 Download VSCode
 Download VSCode "platformio" extension
@@ -41,4 +42,3 @@ To specify which pins on the microcontroller you will be using for what hardware
 
 Each hardware peripherial used on the board will have a seperate `.c` configuration source file located in the `src` folder. The file `globals.c` is where to set the values for for these peripherials. This includes the specifications for whatever Nema17 or equivillent stepper motor is used, the rod diameter for the curtains, the length of them, motor speed, etc.
 
-A webserver is needed to read and save the requests from a smartphone to the smart blinds device. In my testing, I was using IFTT, as it is a free service that integrates with Google Voice very easily. An IFTT command would send an HTTP request with body of JSON data to the webserver, which it would then parse and save in it's database. When the smart blinds polls and requests the servers data every one second, it will update the global variables states in the firmware, and then move to the motors to the corresponding positions.
