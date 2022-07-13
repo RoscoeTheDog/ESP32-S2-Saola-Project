@@ -26,10 +26,12 @@ The purpose of this project was to give me more insights and experience in an em
 Download VSCode
 Download VSCode "platformio" extension
 
-All platformIO projects have a platformio.ini configuration file
-Once your ESP32 device is connected and drivers are installed, ensure your on the right COM port.
+All platformIO projects have a platformio.ini configuration file. Once your ESP32 device is connected and drivers are installed, ensure your on the right COM port.
+
+```
 monitor_speed = 115200
 upload_port = COM10 [10 is an arbitragy number here]
+```
 
 if you are using an ESP-prog breakout development board for debugging, then be sure to specify this in `platformio.ini` and run it at a very low speed as it's unstable at higher speeds
 
