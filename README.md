@@ -2,6 +2,14 @@
 
 The purpose of this project was to give me more insights and experience in embedded development and also solve a real-world issue in my own home. I have three giant 6 foot wide windows in my apartment which allows a lot of heat in and reduces the privacy in my house. I wanted to build a device that could draw all the curtains with floating point precision in using a single voice command or upon other events (timer, heat, etc) and work alongside other smart devices. In order to communicate with each device, the ESP32 module will communicate to a private Django application webserver (written in Python) via HTTP requests each second. For more information on the Django webserver, see this repository here: https://github.com/RoscoeTheDog/RoscoeTheDogWebHub
 
+Hardware required:
+*ESP32-S2-Saola
+*Button actuator switches-- I used some arcade style arrow ones to fit the up-down elevator design of the curtains.
+*TMC2209 stepper driver controller (microstepping for silence and extra precision)
+*Power Source-- I used a 12v 8000mah battery.
+*Solar panels (optional)
+*Solar charge controller (optional)
+
 # Known bugs:
 * Wifi settings are not restored from NVS storage upon cold boot. You must sign into wifi using EspTouch Smartconfig Android/iOS app to reconnect.
 * The magnetic switches which detect when curtains are fully stowed are causing the TaskWatchdog monitor thread service to panic and reset when 'actuated'
@@ -27,8 +35,8 @@ debug_tool = esp-prog
 debug_speed = 500
 ```
 
-Each peripherial module on the micro-controller will have a seperate `.c` configuration source file located in the `src` folder.
-
 To specify which pins on the microcontroller you will be using for what hardware (motors, sensors, etc), you will need to navigate to the `configGpio.h` file located in the `include` project directory.
 
-There is an optional system status LED co-routine which changes the color and blinks and LED to indicate the firmwares status. It is optional but recommended.
+Each hardware peripherial used on the board will have a seperate `.c` configuration source file located in the `src` folder. The file `globals.c` is where to set the values for for these peripherials. This includes the specifications for whatever Nema17 or equivillent stepper motor is used, the rod diameter for the curtains, the length of them, motor speed, etc.
+
+A webserver is needed to read and save the requests from a smartphone to the smart blinds device. In my testing, I was using IFTT, as it is a free service that integrates with Google Voice very easily. An IFTT command would send an HTTP request with body of JSON data to the webserver, which it would then parse and save in it's database. When the smart blinds polls and requests the servers data every one second, it will update the global variables states in the firmware, and then move to the motors to the corresponding positions.
