@@ -9,12 +9,13 @@ The purpose of this project was to give me more insights and experience in an em
 * A stepper motor. I specifically used a Nema17 but I would use a Nema19 or a worm gear motor if I were to redesign and do the project again.
 * Power Source-- I used a 12v 8000mah battery to match the stepper motor.
 * 12v to 5v buck converter or equivillent to stepdown power source for controller
+* Magnet switches (optional if using NEMA17)
 * Solar panels (optional)
 * Solar charge controller (optional)
 
 # Known bugs:
 * Wifi settings are not restored from NVS storage upon cold boot. You must sign into wifi using EspTouch Smartconfig Android/iOS app to reconnect.
-* The magnetic switches which detect when curtains are fully stowed are causing the TaskWatchdog monitor thread service to panic and reset when 'actuated'
+* The magnetic switches that detect when curtains are fully stowed cause the TaskWatchdog thread to panic and reset the device. This is an optional hardware requirement if using a Nema17 and properly measured the curtain lengths which are set in `Globals.h`
 
 # Known hardware issues:
 * The current CAD design for the smart blinds works and is compact but the nema17 motors inside are just barely strong enough to rotate a 6 foot PVC pipe at reasonable speeds. I would like to put a wormgear motor inside instead with enough torque to rotate a ~20ft pipe holding about 5-7 lbs.
