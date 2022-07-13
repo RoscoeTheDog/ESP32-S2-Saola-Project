@@ -18,7 +18,7 @@ The purpose of this project was to give me more insights and experience in an em
 * The magnetic switches that detect when curtains are fully stowed cause the TaskWatchdog thread to panic and reset the device. This is an optional hardware requirement if using a Nema17 and properly measured the curtain lengths which are set in `Globals.h`
 
 # Known hardware issues:
-* The current CAD design for the smart blinds works and is compact but the nema17 motors inside are just barely strong enough to rotate a 6 foot PVC pipe at reasonable speeds. I would like to put a wormgear motor inside instead with enough torque to rotate a ~20ft pipe holding about 5-7 lbs.
+* The current CAD design for the smart blinds works and is compact, but the nema17 motors inside are just barely strong enough to rotate a single window's PVC pipe rod at a reasonable speed. I would instead like to replace it with a wormgear motor inside along with magnet actuators on the bottom of the curtains and windows to stop the motor.
 
 
 Getting Started with this project:
