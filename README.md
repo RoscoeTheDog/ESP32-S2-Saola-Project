@@ -1,4 +1,4 @@
-# ESP32-S2-Saola embedded microcontroller SmartCurtains using the Espressif ESP-IDF framework written in C/C++.
+# Embedded ESP32-S2 microcontroller Smart Curtain System using ESP-IDF framework written in C/C++.
 
 The purpose of this project was to give me more insights and experience in embedded development and also solve a real-world issue in my own home. I have three giant 6 foot wide windows in my apartment which allows a lot of heat in and reduces the privacy in my house. I wanted to build a device that could draw all the curtains with floating point precision in using a single voice command or upon other events (timer, heat, etc) and work alongside other smart devices. In order to communicate with each device, the ESP32 module will communicate to a private Django application webserver (written in Python) via HTTP requests each second. For more information on the Django webserver, see this repository here: https://github.com/RoscoeTheDog/RoscoeTheDogWebHub
 
