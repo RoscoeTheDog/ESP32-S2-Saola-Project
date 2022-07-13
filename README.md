@@ -21,6 +21,14 @@ monitor_speed = 115200
 upload_port = COM10
 
 if you are using an ESP-prog breakout development board for debugging, then be sure to run it at a very low speed as it's unstable at higher speeds
+
+```
 debug_tool = esp-prog
 debug_speed = 500
+```
 
+Each peripherial module on the micro-controller will have a seperate `.c` configuration source file located in the `src` folder.
+
+To specify which pins on the microcontroller you will be using for what hardware (motors, sensors, etc), you will need to navigate to the `configGpio.h` file located in the `include` project directory.
+
+There is an optional system status LED co-routine which changes the color and blinks and LED to indicate the firmwares status. It is optional but recommended.
