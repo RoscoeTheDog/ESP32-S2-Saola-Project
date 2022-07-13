@@ -6,7 +6,8 @@ The purpose of this project was to give me more insights and experience in embed
 * ESP32-S2-Saola microcontroller
 * Push button actuators-- I used some arcade style arrow ones to fit the up-down elevator design of the curtains.
 * TMC2209 stepper driver controller (microstepping for silence and extra precision)
-* Power Source-- I used a 12v 8000mah battery.
+* A stepper motor. I specifically used a Nema17 but I would use a Nema19 or a worm gear motor if I were to redesign and do the project again.
+* Power Source-- I used a 12v 8000mah battery to match the stepper motor.
 * 12v to 5v buck converter or equivillent to stepdown power source for controller
 * Solar panels (optional)
 * Solar charge controller (optional)
