@@ -17,21 +17,20 @@ The purpose of this project was to give me more insights and experience in an em
 * Wifi settings are not restored from NVS storage upon cold boot. You must sign into wifi using EspTouch Smartconfig Android/iOS app to reconnect.
 * The magnetic switches that detect when curtains are fully stowed cause the TaskWatchdog thread to panic and reset the device. This is an optional hardware requirement if using a Nema17 and properly measured the curtain lengths which are set in `Globals.h`
 
-# Known hardware issues:
+# Design notes:
 * The current CAD design for the smart blinds works and is compact, but the nema17 motors inside are just barely strong enough to rotate a single window's PVC pipe rod at a reasonable speed. I would instead like to replace it with a wormgear motor inside along with magnet actuators on the bottom of the curtains and windows to stop the motor.
 
-
-Getting Started with this project:
+To install the firmware:
 
 Download VSCode
 Download VSCode "platformio" extension
 
 All platformIO projects have a platformio.ini configuration file
-double check your monitor speed and upload ports are configured correctly and operating on a valid COM port
+Once your ESP32 device is connected and drivers are installed, ensure your on the right COM port.
 monitor_speed = 115200
-upload_port = COM10
+upload_port = COM10 [10 is an arbitragy number here]
 
-if you are using an ESP-prog breakout development board for debugging, then be sure to run it at a very low speed as it's unstable at higher speeds
+if you are using an ESP-prog breakout development board for debugging, then be sure to specify this in `platformio.ini` and run it at a very low speed as it's unstable at higher speeds
 
 ```
 debug_tool = esp-prog
